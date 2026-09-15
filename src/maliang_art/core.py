@@ -117,6 +117,29 @@ def _assert_plain_path(root: Path, destination: Path, *, include_destination: bo
             raise PathContainmentError(f"path contains a symlink or reparse point: {current}")
 
 
+def _assert_no_external_hardlinks(destination: Path) -> None:
+    """Allow only the short-lived sibling temp link used by concurrent publishers."""
+    initial = destination.lstat()
+    if initial.st_nlink == 1:
+        return
+    temporary_aliases = 0
+    prefix = f".{destination.name}."
+    for candidate in destination.parent.iterdir():
+        if candidate == destination:
+            continue
+        try:
+            info = candidate.lstat()
+        except FileNotFoundError:
+            continue
+        if info.st_dev == initial.st_dev and info.st_ino == initial.st_ino:
+            if not (candidate.name.startswith(prefix) and candidate.name.endswith(".tmp")):
+                raise CollisionError(f"immutable destination has hard-link aliases: {destination}")
+            temporary_aliases += 1
+    current = destination.lstat()
+    if current.st_nlink != 1 and current.st_nlink != 1 + temporary_aliases:
+        raise CollisionError(f"immutable destination has external hard-link aliases: {destination}")
+
+
 def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
     _assert_plain_path(root, destination)
     try:
@@ -145,11 +168,10 @@ def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
             return True
         except FileExistsError:
             try:
-                destination_info = destination.lstat()
+                destination.lstat()
                 if _is_link_or_reparse(destination):
                     raise CollisionError(f"immutable destination is a link: {destination}")
-                if destination_info.st_nlink != 1:
-                    raise CollisionError(f"immutable destination has hard-link aliases: {destination}")
+                _assert_no_external_hardlinks(destination)
                 existing = destination.read_bytes()
             except CollisionError:
                 raise
