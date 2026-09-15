@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "source-provenance-extract",
+  "sourceRepository": "https://github.com/cty41/wooftactics",
+  "sourceCommit": "7898f45b9d7978f1eaae14732df338f440a6a5fa",
+  "sourceManifestPath": "Tools/public-release/asset-provenance.json",
+  "sourceManifestSha256": "ce52d2f48ce7519850f315d4b9444bed3ff690fda7b4505df5afaa79095bb9d7",
+  "entries": [
+    {"path": "Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_ring_pommel_dao_idle_dr_v03.png", "sha256": "e2246e0e6d3a4cea92b85cf7add5ea442366389ac5173490bf0bff2fbf25dfb3", "status": "approved", "rightsHolder": "cty41", "license": "CC-BY-4.0", "provenance": "deterministic-component-assembly"},
+    {"path": "Tools/artworks/poet_five_red_chow/reviews/poet_cast_dr_three_pose_stick_preview_v03.png", "sha256": "857961904deb11d123b4fb4aaccc8926fdfc5393ba6e3be8036d5c4f65350bb6", "status": "approved", "rightsHolder": "cty41", "license": "CC-BY-4.0", "provenance": "cty41-direct-supporting-artifact-declaration"},
+    {"path": "Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_cast_dr_vertical_guard_grip_v01.png", "sha256": "7cd072d554222d24c1cc4b357f3220260c01016c47be51d21c34e045d4139883", "status": "approved", "rightsHolder": "cty41", "license": "CC-BY-4.0", "provenance": "cty41-reviewed-generated-cast-import-with-known-deviations"},
+    {"path": "Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_cast_dr_vertical_guard_grip_v01_128.png", "sha256": "4484f6e763572acf4115adb14ce355b3c96b4eb4af2aa2c46d9775baa4769cda", "status": "approved", "rightsHolder": "cty41", "license": "CC-BY-4.0", "provenance": "cty41-reviewed-generated-cast-import-with-known-deviations"}
+  ]
+}

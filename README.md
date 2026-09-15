@@ -29,14 +29,18 @@ maliang-art pose select-option --spec draft.json --option-id arc-a \
   --output-card card.json --reviewer art-director --reason "Readable silhouette" \
   --rejected-reason "arc-b=Weaker contact" --selected-at 2026-01-01T12:00:00Z
 maliang-art records validate draft.json --schema pose-draft
+maliang-art records validate invocation.json --schema invocation
+maliang-art records validate delivery.json --schema delivery --root . --verify
 maliang-art records validate examples/poet-cast/draft.json --schema pose-draft
 maliang-art records check path/to/record-tree
 maliang-art review validate rule review-rule.json --authority-reviewer art-director
 ```
 
 Pose canvases are record-defined; previews default to half the canvas dimensions
-or accept `--preview-size WIDTHxHEIGHT`. `pose select-option` requires an explicit
-reviewer but never assumes a particular person. Every unselected option needs one reason. Existing output bytes are
+or accept `--preview-size WIDTHxHEIGHT`. Board and preview allocations are
+bounded to prevent oversized valid records from exhausting memory.
+`pose select-option` requires an explicit reviewer but never assumes a particular
+person. Every unselected option needs one reason. Existing output bytes are
 immutable: repeating identical work succeeds, while different content at the
 same path fails.
 
@@ -58,8 +62,11 @@ Versioned JSON Schemas are shipped under `schemas/v1/`.
 - SHA-256 fields bind bytes; they do not establish authorship or licensing.
 - Publication uses a temporary file plus a create-if-absent hard link, making
   concurrent identical publishers safe and conflicting publishers fail closed.
-- Tests use synthetic fixtures. The separately attributed `examples/poet-cast/`
-  tutorial contains six hash-bound source-project files for an auditable sample.
+- Behavior tests use synthetic fixtures. A separate integrity/provenance test
+  verifies the attributed `examples/poet-cast/` tutorial and its six hash-bound
+  source-project files.
 
-Code is MIT licensed. `examples/poet-cast/` is CC BY 4.0; see its
-`ATTRIBUTION.md`, `assets.json`, `REUSE.toml`, and `LICENSES/CC-BY-4.0.txt`.
+Code and the Python distribution are MIT licensed. The repository-only
+`examples/poet-cast/` tutorial is excluded from the sdist and remains CC BY 4.0;
+see its `ATTRIBUTION.md`, `assets.json`, `REUSE.toml`, and
+`LICENSES/CC-BY-4.0.txt`.

@@ -6,6 +6,7 @@ import json
 import math
 import os
 import re
+import stat
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -89,34 +90,98 @@ def contained_path(root: str | os.PathLike[str], relative: str | os.PathLike[str
     return target
 
 
-def _publish_immutable(data: bytes, destination: Path) -> bool:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    fd, temp_name = tempfile.mkstemp(prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent)
+def _is_link_or_reparse(path: Path) -> bool:
+    """Recognize symlinks and Windows reparse points without following them."""
+    try:
+        info = path.lstat()
+    except FileNotFoundError:
+        return False
+    if stat.S_ISLNK(info.st_mode):
+        return True
+    attributes = getattr(info, "st_file_attributes", 0)
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    return bool(attributes & reparse_flag)
+
+
+def _assert_plain_path(root: Path, destination: Path, *, include_destination: bool = False) -> None:
+    """Reject existing namespace components that can redirect path operations."""
+    try:
+        relative = destination.relative_to(root)
+    except ValueError as exc:
+        raise PathContainmentError("path escapes root") from exc
+    current = root
+    parts = relative.parts if include_destination else relative.parts[:-1]
+    for part in parts:
+        current /= part
+        if _is_link_or_reparse(current):
+            raise PathContainmentError(f"path contains a symlink or reparse point: {current}")
+
+
+def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
+    _assert_plain_path(root, destination)
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise MaLiangError(f"cannot prepare immutable destination: {destination}") from exc
+    # Recheck after creating parents. This rejects ordinary symlink/junction
+    # redirection, although hostile namespace mutation remains a documented
+    # limitation of portable pathname APIs.
+    _assert_plain_path(root, destination)
+    try:
+        fd, temp_name = tempfile.mkstemp(
+            prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent
+        )
+    except OSError as exc:
+        raise MaLiangError(f"cannot create immutable publication temporary: {destination}") from exc
     temporary = Path(temp_name)
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
+        _assert_plain_path(root, destination)
         try:
             os.link(temporary, destination)
             return True
         except FileExistsError:
             try:
+                destination_info = destination.lstat()
+                if _is_link_or_reparse(destination):
+                    raise CollisionError(f"immutable destination is a link: {destination}")
+                if destination_info.st_nlink != 1:
+                    raise CollisionError(f"immutable destination has hard-link aliases: {destination}")
                 existing = destination.read_bytes()
+            except CollisionError:
+                raise
             except OSError as exc:
                 raise CollisionError(f"cannot inspect immutable destination: {destination}") from exc
             if existing != data:
                 raise CollisionError(f"immutable publication collision: {destination}")
             return False
+        except OSError as exc:
+            raise MaLiangError(f"cannot publish immutable destination: {destination}") from exc
     finally:
-        temporary.unlink(missing_ok=True)
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def read_contained_bytes(root: str | os.PathLike[str], relative: str | os.PathLike[str]) -> bytes:
+    """Read a regular path beneath a root while rejecting visible link indirection."""
+    root_path = Path(root).resolve()
+    target = contained_path(root_path, relative)
+    _assert_plain_path(root_path, target, include_destination=True)
+    data = target.read_bytes()
+    _assert_plain_path(root_path, target, include_destination=True)
+    return data
 
 
 def write_immutable_json(root: str | os.PathLike[str], relative: str | os.PathLike[str], value: Any) -> Path:
     """Atomically publish canonical JSON, accepting idempotent concurrent writers."""
-    destination = contained_path(root, relative)
-    _publish_immutable(canonical_bytes(value), destination)
+    root_path = Path(root).resolve()
+    destination = contained_path(root_path, relative)
+    _publish_immutable(canonical_bytes(value), destination, root_path)
     return destination
 
 
@@ -124,6 +189,7 @@ def write_immutable_bytes(root: str | os.PathLike[str], relative: str | os.PathL
     """Atomically publish immutable bytes beneath a root."""
     if not isinstance(data, bytes):
         raise MaLiangError("data must be bytes")
-    destination = contained_path(root, relative)
-    _publish_immutable(data, destination)
+    root_path = Path(root).resolve()
+    destination = contained_path(root_path, relative)
+    _publish_immutable(data, destination, root_path)
     return destination

@@ -1,13 +1,14 @@
 """Concrete JSON and Pillow adapters for MaLiang's pure core."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
 
-from .core import contained_path, write_immutable_bytes, write_immutable_json
-from .records import load_json
+from .core import read_contained_bytes, write_immutable_bytes, write_immutable_json
+from .records import RecordValidationError
 
 
 class JsonFileAdapter:
@@ -17,7 +18,10 @@ class JsonFileAdapter:
         self.root = Path(root)
 
     def load(self, path: str | Path) -> Any:
-        return load_json(contained_path(self.root, path))
+        try:
+            return json.loads(read_contained_bytes(self.root, path).decode("utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise RecordValidationError(f"cannot load JSON record: {exc}") from exc
 
     def publish(self, path: str | Path, value: Any) -> Path:
         return write_immutable_json(self.root, path, value)

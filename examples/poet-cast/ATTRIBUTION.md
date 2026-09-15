@@ -17,8 +17,9 @@ and tutorial role. All six listed assets were copied without modification. The
 JSON Draft and Action Card preserve the original human selection record.
 `license-evidence.json` is the immutable cty41 receipt (recorded at the separate
 source commit in `assets.json`) that releases those two JSON records from
-project-owned status to CC BY 4.0; the four PNGs were already
-listed as approved CC BY 4.0 in the source project's public provenance manifest.
+project-owned status to CC BY 4.0. `png-license-evidence.json` is a hash-bound
+extract of the source project's public provenance manifest showing all four PNGs
+as approved CC BY 4.0.
 
 All MaLiang source code remains MIT-licensed; the repository MIT license does
 not replace or weaken this sample's CC BY 4.0 terms.

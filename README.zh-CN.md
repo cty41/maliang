@@ -26,7 +26,8 @@ maliang-art records check path/to/record-tree
 选择姿态时必须显式填写 reviewer，并为每个未选方案提供原因；工具不绑定
 任何特定人员。相同内容可幂等发布到同一路径，不同内容会触发碰撞错误。
 
-代码采用 MIT；`examples/poet-cast/` 按 CC BY 4.0 提供，并通过
-`assets.json` 固定六个来源文件的哈希。自动测试仍只使用合成 fixture；
-授权示例的来源与署名见其 `ATTRIBUTION.md`。其他信息详见英文 `README.md`、
+代码与 Python 发行包采用 MIT；仅存在于仓库、不会打入 sdist 的
+`examples/poet-cast/` 按 CC BY 4.0 提供，并通过 `assets.json` 固定六个
+来源文件的哈希。行为测试使用合成 fixture；另有独立完整性/来源测试核对
+授权示例，其来源与署名见 `ATTRIBUTION.md`。其他信息详见英文 `README.md`、
 `SECURITY.md`、`CONTRIBUTING.md` 与 `EXTRACTED_FROM.md`。

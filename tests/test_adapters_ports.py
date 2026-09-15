@@ -17,6 +17,18 @@ def test_json_adapter_satisfies_protocol(tmp_path):
         adapter.load("../outside.json")
 
 
+def test_json_adapter_rejects_symlinked_file(tmp_path):
+    target = tmp_path / "target.json"
+    target.write_text('{"value": 1}', encoding="utf-8")
+    alias = tmp_path / "alias.json"
+    try:
+        alias.symlink_to(target)
+    except OSError:
+        pytest.skip("symlink creation is unavailable")
+    with pytest.raises(PathContainmentError):
+        JsonFileAdapter(tmp_path).load("alias.json")
+
+
 def test_pillow_adapter_satisfies_protocol(tmp_path):
     adapter = PillowImageAdapter()
     assert isinstance(adapter, ImagePublisher)

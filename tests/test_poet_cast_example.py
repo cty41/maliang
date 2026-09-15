@@ -42,6 +42,17 @@ def test_poet_cast_manifest_binds_six_licensed_source_files():
         manifest_by_role["selected-action-card"]["sha256"],
     }
 
+    png_binding = manifest["pngLicenseEvidence"]
+    png_evidence_path = contained_path(EXAMPLE, png_binding["path"])
+    assert hashlib.sha256(png_evidence_path.read_bytes()).hexdigest() == png_binding["sha256"]
+    png_evidence = _json(png_evidence_path)
+    assert png_evidence["sourceCommit"] == manifest["sourceCommit"]
+    assert png_evidence["sourceManifestSha256"] == png_binding["sourceManifestSha256"]
+    png_assets = {item["sourcePath"]: item["sha256"] for item in manifest["assets"] if item["path"].endswith(".png")}
+    assert {item["path"]: item["sha256"] for item in png_evidence["entries"]} == png_assets
+    assert all(item["status"] == "approved" and item["rightsHolder"] == "cty41"
+               and item["license"] == "CC-BY-4.0" for item in png_evidence["entries"])
+
 
 def test_poet_cast_draft_and_card_validate_and_reproduce_selection():
     draft = validate_draft(_json(EXAMPLE / "draft.json"))

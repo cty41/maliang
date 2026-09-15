@@ -3,10 +3,15 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
+import re
 from typing import Any, Mapping
 
 from .core import MaLiangError, stable_id
 from .records import validate_artifact
+
+
+_INVOCATION_ID = re.compile(r"invocation-[0-9a-f]{16}")
 
 
 class WorkflowValidationError(MaLiangError):
@@ -36,10 +41,24 @@ def _timestamp(value: Any, name: str) -> str:
     return value
 
 
+def _schema_version(record: Mapping[str, Any], name: str) -> None:
+    version = record.get("schemaVersion")
+    if isinstance(version, bool) or not isinstance(version, int) or version != 1:
+        raise WorkflowValidationError(f"unsupported {name} schemaVersion")
+
+
+def _invocation_id(value: Any, name: str) -> str:
+    if not isinstance(value, str) or not _INVOCATION_ID.fullmatch(value):
+        raise WorkflowValidationError(f"{name} must be a canonical invocationId")
+    return value
+
+
 def _validate_id(record: dict[str, Any], field: str, prefix: str) -> dict[str, Any]:
     payload = {key: value for key, value in record.items() if key not in {field, "schemaVersion"}}
     expected = stable_id(prefix, payload)
-    if record.get(field) not in {None, expected}:
+    if field in record and not isinstance(record[field], str):
+        raise WorkflowValidationError(f"{field} must be text")
+    if field in record and record[field] != expected:
         raise WorkflowValidationError(f"{field} does not match canonical payload")
     return {"schemaVersion": 1, field: expected, **payload}
 
@@ -49,8 +68,7 @@ def validate_invocation(value: Any) -> dict[str, Any]:
     allowed = {"schemaVersion", "invocationId", "attemptId", "provider", "model", "request", "requestedAt"}
     if set(record) - allowed or allowed - {"invocationId"} - set(record):
         raise WorkflowValidationError("invocation fields are invalid")
-    if record.get("schemaVersion", 1) != 1:
-        raise WorkflowValidationError("unsupported invocation schemaVersion")
+    _schema_version(record, "invocation")
     for field in ("attemptId", "provider", "model"):
         _text(record.get(field), f"invocation.{field}")
     if not isinstance(record.get("request"), Mapping):
@@ -59,15 +77,14 @@ def validate_invocation(value: Any) -> dict[str, Any]:
     return _validate_id(record, "invocationId", "invocation")
 
 
-def validate_delivery(value: Any) -> dict[str, Any]:
+def validate_delivery(value: Any, *, root: str | Path | None = None, verify: bool = False) -> dict[str, Any]:
     record = _object(value, "delivery")
     allowed = {"schemaVersion", "deliveryId", "invocationId", "artifact", "deliveredAt", "metadata"}
     if set(record) - allowed or allowed - {"deliveryId", "metadata"} - set(record):
         raise WorkflowValidationError("delivery fields are invalid")
-    if record.get("schemaVersion", 1) != 1:
-        raise WorkflowValidationError("unsupported delivery schemaVersion")
-    _text(record.get("invocationId"), "delivery.invocationId")
-    record["artifact"] = validate_artifact(record.get("artifact"))
+    _schema_version(record, "delivery")
+    _invocation_id(record.get("invocationId"), "delivery.invocationId")
+    record["artifact"] = validate_artifact(record.get("artifact"), root=root, verify=verify)
     _timestamp(record.get("deliveredAt"), "delivery.deliveredAt")
     if "metadata" in record and not isinstance(record["metadata"], Mapping):
         raise WorkflowValidationError("delivery.metadata must be an object")
@@ -79,9 +96,9 @@ def validate_failure(value: Any) -> dict[str, Any]:
     allowed = {"schemaVersion", "failureId", "invocationId", "failedAt", "category", "message", "retryable", "details"}
     if set(record) - allowed or allowed - {"failureId", "details"} - set(record):
         raise WorkflowValidationError("failure fields are invalid")
-    if record.get("schemaVersion", 1) != 1:
-        raise WorkflowValidationError("unsupported failure schemaVersion")
-    for field in ("invocationId", "category", "message"):
+    _schema_version(record, "failure")
+    _invocation_id(record.get("invocationId"), "failure.invocationId")
+    for field in ("category", "message"):
         _text(record.get(field), f"failure.{field}")
     _timestamp(record.get("failedAt"), "failure.failedAt")
     if not isinstance(record.get("retryable"), bool):

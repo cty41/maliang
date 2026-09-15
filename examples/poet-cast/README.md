@@ -53,11 +53,14 @@ composition, and final style still require their own authoritative sources.
 ### The real branch after B
 
 B described a compact diagonal/mid-body focus and informed an early ImageGen
-attempt. That attempt was rejected. The project then changed strategy: a later
-human revision used a v07 vertical-guard guide, and the displayed final sprite
-was adopted through reviewed-import. The committed Action Card is a historical
-backfill of the earlier B decision; it must not be read as direct authorization
-or provenance for the later vertical-guard image.
+attempt. Retry feedback discarded that B strategy and its prepared candidate;
+the source Attempt record itself remained `prepared`, not `rejected`. The project
+then changed strategy: a later human revision used a v07 vertical-guard guide,
+and the displayed final sprite was adopted through reviewed-import. The committed
+Action Card is a historical backfill of the earlier B decision; it must not be
+read as direct authorization or provenance for the later vertical-guard image.
+Source records `job-5ceb11280e5973fa-a001`, `feedback-3284abb54c9e7b62`, and
+`feedback-addendum-05fce1681fbed9df` preserve that branch decision.
 
 This is a useful production lesson: a valid Pose Proof can close one decision
 without guaranteeing that the subsequent generation strategy succeeds. A

@@ -1,12 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/cty41/maliang/schemas/v1/artifact.schema.json",
+  "$id": "https://raw.githubusercontent.com/cty41/maliang/v0.1.0/schemas/v1/artifact.schema.json",
   "title": "MaLiang artifact binding v1",
   "type": "object",
   "additionalProperties": false,
   "required": ["path", "sha256"],
   "properties": {
-    "path": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"},
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\\/$)[^\\\\]+$"
+    },
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
   }
 }

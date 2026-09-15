@@ -11,6 +11,12 @@
     "licenseReceiptId": "public-artifact-license-67fa3dca88379dbd",
     "sha256": "bf0a1a00f41dd63e3840fbd2adb67b36b20c778bda98fb9b99f414bb5674e470"
   },
+  "pngLicenseEvidence": {
+    "path": "png-license-evidence.json",
+    "sourceManifestPath": "Tools/public-release/asset-provenance.json",
+    "sourceManifestSha256": "ce52d2f48ce7519850f315d4b9444bed3ff690fda7b4505df5afaa79095bb9d7",
+    "sha256": "e20b020618609d3ab2c20a5fb30a58d915f258bbc57b1688d79fedc3877f3615"
+  },
   "assets": [
     {
       "path": "draft.json",

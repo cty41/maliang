@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -75,3 +76,27 @@ def test_concurrent_conflicting_publication_never_overwrites(tmp_path):
 
 def test_immutable_bytes_require_bytes(tmp_path):
     with pytest.raises(MaLiangError): write_immutable_bytes(tmp_path, "a", "text")
+
+
+def test_immutable_publication_rejects_existing_symlink(tmp_path):
+    target = tmp_path / "target.json"
+    target.write_bytes(canonical_bytes({"value": 1}))
+    alias = tmp_path / "alias.json"
+    try:
+        alias.symlink_to(target)
+    except OSError:
+        pytest.skip("symlink creation is unavailable")
+    with pytest.raises((PathContainmentError, CollisionError)):
+        write_immutable_json(tmp_path, "alias.json", {"value": 1})
+
+
+def test_immutable_publication_rejects_existing_hardlink_alias(tmp_path):
+    outside = tmp_path.parent / f"{tmp_path.name}-outside.json"
+    destination = tmp_path / "published.json"
+    outside.write_bytes(canonical_bytes({"value": 1}))
+    try:
+        os.link(outside, destination)
+        with pytest.raises(CollisionError, match="hard-link aliases"):
+            write_immutable_json(tmp_path, "published.json", {"value": 1})
+    finally:
+        outside.unlink(missing_ok=True)

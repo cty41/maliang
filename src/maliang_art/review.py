@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from copy import deepcopy
 from dataclasses import dataclass
@@ -21,6 +22,9 @@ RULE_LIFECYCLES = ("draft", "active", "superseded", "suspended")
 QUALIFICATION_STATES = ("unqualified", "shadow", "auto-retry-qualified", "suspended", "superseded")
 CASE_STATUSES = ("active", "shadow-only", "needs-splitting", "historical-only", "superseded", "invalid")
 CASE_POLARITIES = ("positive", "negative", "boundary")
+_APPROVING_DECISIONS = frozenset({"approved", "passed"})
+_REJECTING_DECISIONS = frozenset({"rejected", "superseded", "retry"})
+_HUMAN_DECISIONS = _APPROVING_DECISIONS | _REJECTING_DECISIONS
 CONTROLLED_OPERATIONS = ("remove", "enforce", "adjust", "preserve", "hide", "restore_from_anchor")
 GENERATION_INPUT_ROLES = (
     "POSITIVE_IDENTITY_ANCHOR", "APPROVED_COMPONENT", "APPROVED_TOPOLOGY_COMPARISON",
@@ -52,7 +56,7 @@ class ReviewAuthority:
 def canonical_bytes(value: Any) -> bytes:
     """Return the repository's canonical JSON encoding for a JSON value."""
     _assert_json_value(value, "value")
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
 
 
 def stable_id(prefix: str, payload: Any, length: int = 16) -> str:
@@ -111,14 +115,19 @@ def audit_case_fitness(case: Mapping[str, Any], *, authority: ReviewAuthority) -
         _artifact(artifact, "case.artifact")
     except ReviewValidationError:
         fatal.append("invalid_artifact_binding")
-    if not isinstance(source, Mapping) or not source.get("attemptId") or not source.get("humanDecision"):
+    if not isinstance(source, Mapping):
+        fatal.append("missing_attempt_or_human_decision")
+        source = {}
+    elif not source.get("attemptId") or not source.get("humanDecision"):
         fatal.append("missing_attempt_or_human_decision")
     if source.get("reviewer") != authority.reviewer:
         fatal.append("non_authoritative_human_source")
     decision = source.get("humanDecision")
-    if polarity == "positive" and decision not in {"approved", "passed"}:
+    if decision not in _HUMAN_DECISIONS:
+        fatal.append("invalid_human_decision")
+    if polarity == "positive" and decision not in _APPROVING_DECISIONS:
         fatal.append("positive_not_approved")
-    if polarity == "negative" and decision not in {"rejected", "superseded", "retry"}:
+    if polarity == "negative" and decision not in _REJECTING_DECISIONS:
         fatal.append("negative_not_rejected")
     scope = case.get("scope")
     if not isinstance(scope, Mapping) or not scope:
@@ -197,13 +206,21 @@ def validate_review_case(case: Mapping[str, Any], *, authority: ReviewAuthority)
     _validate_scope(case.get("scope", {}), "case.scope")
     _artifact(case.get("artifact"), "case.artifact")
     source = _mapping(case.get("source"), "case.source")
-    _required_text(source, "attemptId"); _required_text(source, "humanDecision")
+    _required_text(source, "attemptId"); decision = _required_text(source, "humanDecision")
     if source.get("reviewer") != authority.reviewer:
         raise ReviewValidationError("case source must match the configured authority reviewer")
+    if decision not in _HUMAN_DECISIONS:
+        raise ReviewValidationError("case source humanDecision is invalid")
+    if case["polarity"] == "positive" and decision not in _APPROVING_DECISIONS:
+        raise ReviewValidationError("positive cases require an approving human decision")
+    if case["polarity"] == "negative" and decision not in _REJECTING_DECISIONS:
+        raise ReviewValidationError("negative cases require a rejecting human decision")
     if not isinstance(case.get("reviewOnly"), bool) or not isinstance(case.get("generationInputAllowed"), bool):
         raise ReviewValidationError("case reviewOnly and generationInputAllowed must be boolean")
-    if case["polarity"] == "negative" and (not case["reviewOnly"] or case["generationInputAllowed"]):
-        raise ReviewValidationError("negative cases are review-only and forbidden as generation input")
+    if case["polarity"] == "negative" and not case["reviewOnly"]:
+        raise ReviewValidationError("negative cases must be review-only")
+    if case["generationInputAllowed"] and (case["polarity"] != "positive" or case["reviewOnly"]):
+        raise ReviewValidationError("only positive, non-review-only cases may be generation inputs")
     if case["status"] != "active" and case["generationInputAllowed"]:
         raise ReviewValidationError("inactive cases cannot be generation inputs")
     if "schemaVersion" in case and case["schemaVersion"] != SCHEMA_VERSION:
@@ -498,7 +515,14 @@ def validate_model_review_result(result: Mapping[str, Any], packet: Mapping[str,
         cited = set(_unique_text_list(defect["evidenceRoles"], "defect.evidenceRoles", nonempty=True))
         if not cited <= bound_roles: raise ReviewValidationError("defect cites evidence outside the packet")
         _region(defect["region"], "defect.region")
-    operations = validate_controlled_operations(result["operations"], frozen_invariants=packet["frozenInvariants"], defect_ids=defect_ids)
+    packet_anchor_roles = {
+        item["role"] for item in [*packet["artifacts"], *packet["evidence"]]
+        if item["role"] in GENERATION_INPUT_ROLES and item.get("generationInput") is not False
+    }
+    operations = validate_controlled_operations(
+        result["operations"], frozen_invariants=packet["frozenInvariants"], defect_ids=defect_ids,
+        bound_anchor_roles=packet_anchor_roles,
+    )
     if result["decision"] == "retry" and not defects:
         raise ReviewValidationError("retry requires at least one defect")
     if result["decision"] != "retry" and operations:
@@ -510,9 +534,13 @@ def validate_model_review_result(result: Mapping[str, Any], packet: Mapping[str,
     return {"resultId": expected_id, **payload}
 
 
-def validate_controlled_operations(operations: Sequence[Mapping[str, Any]], *, frozen_invariants: Sequence[str], defect_ids: Iterable[str]) -> list[dict[str, Any]]:
+def validate_controlled_operations(
+    operations: Sequence[Mapping[str, Any]], *, frozen_invariants: Sequence[str], defect_ids: Iterable[str],
+    bound_anchor_roles: Iterable[str] | None = None,
+) -> list[dict[str, Any]]:
     if not isinstance(operations, list): raise ReviewValidationError("operations must be a list")
     frozen = set(_unique_text_list(frozen_invariants, "frozenInvariants")); defects = set(defect_ids)
+    packet_anchors = None if bound_anchor_roles is None else set(_unique_text_list(list(bound_anchor_roles), "boundAnchorRoles"))
     result = []
     for i, operation in enumerate(operations):
         value = deepcopy(dict(_mapping(operation, f"operations[{i}]")))
@@ -525,6 +553,8 @@ def validate_controlled_operations(operations: Sequence[Mapping[str, Any]], *, f
         if target in frozen and value["operation"] != "preserve": raise ReviewValidationError("operation would change a frozen invariant")
         if value["operation"] == "restore_from_anchor" and value.get("anchorRole") not in GENERATION_INPUT_ROLES:
             raise ReviewValidationError("restore_from_anchor requires an approved positive anchor role")
+        if value["operation"] == "restore_from_anchor" and packet_anchors is not None and value["anchorRole"] not in packet_anchors:
+            raise ReviewValidationError("restore_from_anchor anchorRole is not bound to the review packet")
         if value["operation"] != "restore_from_anchor" and "anchorRole" in value:
             raise ReviewValidationError("anchorRole is only valid for restore_from_anchor")
         result.append(value)
@@ -541,34 +571,54 @@ def compile_controlled_operations(operations: Sequence[Mapping[str, Any]], *, fr
 
 
 def qualification_matches(qualification: Mapping[str, Any], *, authority: ReviewAuthority, rule: Mapping[str, Any], model: str, effort: str, reviewer_prompt_id: str, reviewer_prompt_sha256: str, compiled_policy: Mapping[str, Any], case_set_version: str) -> bool:
-    qualification = _mapping(qualification, "qualification"); rule = _mapping(rule, "rule"); policy = _mapping(compiled_policy, "compiledPolicy")
+    """Return whether a structurally valid, identity-bearing qualification matches this invocation."""
+    try:
+        qualification = _mapping(qualification, "qualification"); rule = _mapping(rule, "rule"); policy = _mapping(compiled_policy, "compiledPolicy")
+        qualification_id = _required_text(qualification, "reviewerQualificationId")
+        identity_payload = {key: value for key, value in qualification.items()
+                            if key not in {"schemaVersion", "reviewerQualificationId"}}
+        if qualification_id != stable_id("reviewer-qualification", identity_payload):
+            raise ReviewValidationError("qualification identity does not match its canonical payload")
+        state = _required_text(qualification, "state")
+        if state not in QUALIFICATION_STATES:
+            raise ReviewValidationError("qualification.state is invalid")
+        _required_text(qualification, "reviewer")
+        _required_text(qualification, "ruleId"); _positive_int(qualification.get("ruleVersion"), "qualification.ruleVersion")
+        _required_text(qualification, "model"); qualification_effort = _required_text(qualification, "effort")
+        if qualification_effort not in {"medium", "high", "xhigh"}:
+            raise ReviewValidationError("qualification.effort is invalid")
+        _required_text(qualification, "reviewerPromptId"); _sha(qualification.get("reviewerPromptSha256"), "qualification.reviewerPromptSha256")
+        _required_text(qualification, "compiledPolicyId"); _sha(qualification.get("compiledPolicySha256"), "qualification.compiledPolicySha256")
+        _required_text(qualification, "caseSetVersion")
+        comparison = _mapping(qualification.get("promptOnlyComparison"), "qualification.promptOnlyComparison")
+        _required_text(comparison, "promptComparisonId")
+    except ReviewValidationError:
+        return False
     return bool(
-        qualification.get("state") == "auto-retry-qualified"
-        and qualification.get("reviewer") == authority.reviewer
-        and qualification.get("ruleId") == rule.get("ruleId")
-        and qualification.get("ruleVersion") == rule.get("version")
-        and qualification.get("model") == model and qualification.get("effort") == effort
-        and qualification.get("reviewerPromptId") == reviewer_prompt_id
-        and qualification.get("reviewerPromptSha256") == reviewer_prompt_sha256
-        and qualification.get("compiledPolicyId") == policy.get("compiledPolicyId")
-        and qualification.get("compiledPolicySha256") == policy.get("sha256")
-        and qualification.get("caseSetVersion") == case_set_version
-        and isinstance(qualification.get("promptOnlyComparison"), dict)
-        and qualification["promptOnlyComparison"].get("promptComparisonId")
+        state == "auto-retry-qualified"
+        and qualification["reviewer"] == authority.reviewer
+        and qualification["ruleId"] == rule.get("ruleId")
+        and qualification["ruleVersion"] == rule.get("version")
+        and qualification["model"] == model and qualification["effort"] == effort
+        and qualification["reviewerPromptId"] == reviewer_prompt_id
+        and qualification["reviewerPromptSha256"] == reviewer_prompt_sha256
+        and qualification["compiledPolicyId"] == policy.get("compiledPolicyId")
+        and qualification["compiledPolicySha256"] == policy.get("sha256")
+        and qualification["caseSetVersion"] == case_set_version
         and not qualification.get("suspendedAt") and not qualification.get("supersededBy")
     )
 
 
 def evaluate_automatic_decision(result: Mapping[str, Any], *, authority: ReviewAuthority, packet: Mapping[str, Any], compiled_policy: Mapping[str, Any], qualifications: Sequence[Mapping[str, Any]], model: str, reviewer_prompt_id: str, reviewer_prompt_sha256: str, case_set_version: str) -> dict[str, Any]:
+    model = _text(model, "model"); reviewer_prompt_id = _text(reviewer_prompt_id, "reviewerPromptId")
+    reviewer_prompt_sha256 = _sha(reviewer_prompt_sha256, "reviewerPromptSha256")
+    case_set_version = _text(case_set_version, "caseSetVersion")
     result = validate_model_review_result(result, packet, compiled_policy)
     round_number = packet["reviewRound"]
     if result["decision"] == "pass_to_human": return {"action": "review_pending", "automaticRetry": False, "reason": "reviewer_passed_to_human"}
     if result["decision"] == "escalate_to_human": return {"action": "human_review_required", "automaticRetry": False, "reason": "reviewer_escalated"}
     if round_number >= 3: return {"action": "human_review_required", "automaticRetry": False, "reason": "automatic_generation_budget_exhausted"}
     rules = {r["ruleId"]: r for r in compiled_policy.get("rules", [])}
-    qualifications_by_rule: dict[str, list[Mapping[str, Any]]] = {}
-    for qualification in qualifications:
-        qualifications_by_rule.setdefault(str(qualification.get("ruleId")), []).append(qualification)
     qualification_ids = set()
     for defect in result["defects"]:
         rule = rules[defect["ruleId"]]
@@ -576,15 +626,19 @@ def evaluate_automatic_decision(result: Mapping[str, Any], *, authority: ReviewA
             return {"action": "human_review_required", "automaticRetry": False, "reason": "defect_not_auto_retry_eligible", "ruleId": defect["ruleId"]}
         if not set(rule.get("requiredEvidenceRoles", [])) <= set(defect["evidenceRoles"]):
             return {"action": "human_review_required", "automaticRetry": False, "reason": "required_evidence_incomplete", "ruleId": defect["ruleId"]}
-        matches = [qualification for qualification in qualifications_by_rule.get(defect["ruleId"], [])
+        matches = [qualification for qualification in qualifications
                    if qualification_matches(qualification, authority=authority, rule=rule, model=model, effort=packet["reasoningEffort"],
                                             reviewer_prompt_id=reviewer_prompt_id, reviewer_prompt_sha256=reviewer_prompt_sha256,
                                             compiled_policy=compiled_policy, case_set_version=case_set_version)]
         if not matches:
             return {"action": "human_review_required", "automaticRetry": False, "reason": "rule_not_qualified_for_invocation", "ruleId": defect["ruleId"]}
-        qualification_id = sorted(matches, key=lambda item: item.get("reviewerQualificationId", ""))[-1].get("reviewerQualificationId")
-        if qualification_id:
-            qualification_ids.add(qualification_id)
+        matches_by_id: dict[str, Mapping[str, Any]] = {}
+        for match in matches:
+            qualification_id = match["reviewerQualificationId"]
+            if qualification_id in matches_by_id and match != matches_by_id[qualification_id]:
+                return {"action": "human_review_required", "automaticRetry": False, "reason": "conflicting_qualification_identity", "ruleId": defect["ruleId"]}
+            matches_by_id[qualification_id] = match
+        qualification_ids.add(sorted(matches_by_id)[-1])
     compiled = compile_controlled_operations(result["operations"], frozen_invariants=packet["frozenInvariants"], defect_ids={d["defectId"] for d in result["defects"]})
     return {"action": "automatic_retry", "automaticRetry": True, "nextRound": round_number + 1,
             "nextEffort": review_effort(round_number + 1), "qualificationIds": sorted(qualification_ids),
@@ -688,7 +742,10 @@ evaluate_automatic_review_decision = evaluate_automatic_decision
 
 
 def _assert_json_value(value: Any, path: str) -> None:
-    if value is None or isinstance(value, (str, int, float, bool)): return
+    if value is None or isinstance(value, (str, int, bool)): return
+    if isinstance(value, float):
+        if not math.isfinite(value): raise ReviewValidationError(f"{path} contains a non-finite number")
+        return
     if isinstance(value, list):
         for i, item in enumerate(value): _assert_json_value(item, f"{path}[{i}]")
         return
@@ -725,11 +782,12 @@ def _sha(value: Any, path: str) -> str:
 
 def _artifact(value: Any, path: str) -> dict[str, str]:
     value = _mapping(value, path); _only_keys(value, {"path", "sha256"}, path)
-    artifact_path = _required_text(value, "path").replace("\\", "/")
-    if artifact_path.startswith("/") or re.match(r"^[A-Za-z]:", artifact_path) or ".." in artifact_path.split("/"):
-        raise ReviewValidationError(f"{path}.path must be a repository-relative non-escaping path")
-    if artifact_path.startswith("Tools/artworks/amazon/"):
-        raise ReviewValidationError(f"{path}.path references a retired asset family")
+    artifact_path = _required_text(value, "path")
+    parts = artifact_path.split("/")
+    if ("\\" in artifact_path or artifact_path.startswith("/")
+            or re.match(r"^[A-Za-z]:", artifact_path)
+            or any(part in {"", ".", ".."} for part in parts)):
+        raise ReviewValidationError(f"{path}.path must be a repository-relative POSIX path")
     return {"path": artifact_path, "sha256": _sha(value.get("sha256"), f"{path}.sha256")}
 
 

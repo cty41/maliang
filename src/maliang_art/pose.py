@@ -19,6 +19,13 @@ DIVIDER = (55, 55, 60, 255)
 DIRECTIONS = {"down-right", "up-left", "down-left", "up-right", "non-directional"}
 DRAFT_KEYS = {"schemaVersion", "assetId", "characterId", "poseId", "direction", "visualMoment", "canvas", "options", "historicalEvidence"}
 OPTION_KEYS = {"optionId", "title", "caption", "head", "spine", "segments", "supportPoints", "contactPoints", "equipmentAxis"}
+_BOARD_MAX_WIDTH = 2048
+_BOARD_MAX_HEIGHT = 2048
+_BOARD_PANEL_MIN = 300
+_BOARD_ART_MIN = 300
+_BOARD_PADDING = 44
+_BOARD_FOOTER = 110
+_MAX_RENDER_PIXELS = _BOARD_MAX_WIDTH * _BOARD_MAX_HEIGHT
 
 
 class PoseProofError(MaLiangError):
@@ -52,7 +59,9 @@ def _point(value: Any, canvas: list[int], label: str) -> tuple[int, int]:
     return x, y
 
 
-def validate_draft(draft: Any) -> dict[str, Any]:
+def validate_draft(
+    draft: Any, *, root: str | Path | None = None, verify: bool = False,
+) -> dict[str, Any]:
     if not isinstance(draft, dict) or set(draft) - DRAFT_KEYS:
         raise PoseProofError("draft contains unknown fields or is not an object")
     required = DRAFT_KEYS - {"historicalEvidence"}
@@ -111,16 +120,20 @@ def validate_draft(draft: Any) -> dict[str, Any]:
             for point in axis:
                 _point(point, canvas, f"option {option_id} equipmentAxis")
     evidence = draft.get("historicalEvidence")
+    if "historicalEvidence" in draft and evidence is None:
+        raise PoseProofError("historicalEvidence must be an artifact object")
     if evidence is not None:
         from .records import validate_artifact
         try:
-            validate_artifact(evidence)
+            validate_artifact(evidence, root=root, verify=verify)
         except MaLiangError as exc:
             raise PoseProofError("historicalEvidence is invalid") from exc
     return draft
 
 
-def validate_card(card: Any) -> dict[str, Any]:
+def validate_card(
+    card: Any, *, root: str | Path | None = None, verify: bool = False,
+) -> dict[str, Any]:
     if not isinstance(card, dict):
         raise PoseProofError("pose proof card must be an object")
     optional = {"historicalEvidence"}
@@ -128,14 +141,15 @@ def validate_card(card: Any) -> dict[str, Any]:
     if set(card) - required - optional or required - set(card) or card.get("schemaVersion") != 1:
         raise PoseProofError("pose proof card fields are invalid")
     pseudo = {"schemaVersion": 1, "assetId": card["assetId"], "characterId": card["characterId"], "poseId": card["poseId"], "direction": card["direction"], "visualMoment": card["visualMoment"], "canvas": card["canvas"], "options": [card["selectedOption"]]}
-    if card.get("historicalEvidence") is not None:
+    if "historicalEvidence" in card:
         pseudo["historicalEvidence"] = card["historicalEvidence"]
-    validate_draft(pseudo)
+    validate_draft(pseudo, root=root, verify=verify)
     selection = card["selection"]
     if not isinstance(selection, dict) or set(selection) != {"optionId", "reviewer", "reason", "rejectedOptions", "selectedAt"} or selection.get("optionId") != card["selectedOption"]["optionId"] or not isinstance(selection.get("reviewer"), str) or not selection["reviewer"].strip() or not isinstance(selection.get("reason"), str) or not selection["reason"].strip() or not isinstance(selection.get("rejectedOptions"), list) or not all(isinstance(item, dict) and set(item) == {"optionId", "reason"} and isinstance(item["optionId"], str) and isinstance(item["reason"], str) and item["reason"].strip() for item in selection["rejectedOptions"]):
         raise PoseProofError("pose proof card selection is invalid")
     rejected_ids = [item["optionId"] for item in selection["rejectedOptions"]]
-    if len(rejected_ids) != len(set(rejected_ids)) or selection["optionId"] in rejected_ids:
+    if (any(not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", item) for item in rejected_ids)
+            or len(rejected_ids) != len(set(rejected_ids)) or selection["optionId"] in rejected_ids):
         raise PoseProofError("pose proof card rejected option ids are invalid")
     _timestamp(selection["selectedAt"])
     payload = {key: value for key, value in card.items() if key not in {"schemaVersion", "poseProofId"}}
@@ -151,14 +165,23 @@ def load_draft(path: str | Path) -> dict[str, Any]:
         raise PoseProofError(f"cannot load pose proof draft: {exc}") from exc
 
 
+def _new_rgba(size: tuple[int, int]) -> Image.Image:
+    width, height = size
+    if width * height > _MAX_RENDER_PIXELS:
+        raise PoseProofError(
+            f"render size exceeds {_MAX_RENDER_PIXELS} pixels: {width}x{height}"
+        )
+    return Image.new("RGBA", size, BACKGROUND)
+
+
 def _draw_option(image: Image.Image, option: dict[str, Any], origin: tuple[int, int], scale: float = 1.0) -> None:
     draw = ImageDraw.Draw(image)
     ox, oy = origin
     def point(value: list[int]) -> tuple[int, int]:
         return round(ox + value[0] * scale), round(oy + value[1] * scale)
-    width = max(3, round(10 * scale))
+    width = max(1, round(10 * scale))
     center = point(option["head"]["center"])
-    radius = round(option["head"]["radius"] * scale)
+    radius = max(1, round(option["head"]["radius"] * scale))
     draw.ellipse((center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius), outline=ORANGE, width=width)
     draw.line([point(value) for value in option["spine"]], fill=ORANGE, width=width, joint="curve")
     for segment in option["segments"]:
@@ -166,29 +189,49 @@ def _draw_option(image: Image.Image, option: dict[str, Any], origin: tuple[int, 
     for field, radius_value in (("supportPoints", 5), ("contactPoints", 4)):
         for value in option[field]:
             x, y = point(value)
-            radius = max(2, round(radius_value * scale))
+            radius = max(1, round(radius_value * scale))
             draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=ORANGE)
     if option["equipmentAxis"] is not None:
-        draw.line([point(value) for value in option["equipmentAxis"]], fill=ORANGE, width=max(2, round(5 * scale)))
+        draw.line([point(value) for value in option["equipmentAxis"]], fill=ORANGE, width=max(1, round(5 * scale)))
 
 
 def render_board(draft: dict[str, Any]) -> Image.Image:
     validate_draft(draft)
     canvas_width, canvas_height = draft["canvas"]
-    panel_width = max(300, canvas_width + 44)
-    art_height = max(300, canvas_height + 44)
-    footer = 110
-    image = Image.new("RGBA", (panel_width * len(draft["options"]), art_height + footer), BACKGROUND)
+    option_count = len(draft["options"])
+
+    # Fit each declared canvas to the available panel while keeping the complete
+    # board inside a fixed RGBA allocation (at most 16 MiB).
+    panel_budget = _BOARD_MAX_WIDTH // option_count
+    scale = min(
+        1.0,
+        (panel_budget - _BOARD_PADDING) / canvas_width,
+        (_BOARD_MAX_HEIGHT - _BOARD_FOOTER - _BOARD_PADDING) / canvas_height,
+    )
+    panel_width = max(_BOARD_PANEL_MIN, round(canvas_width * scale) + _BOARD_PADDING)
+    art_height = max(_BOARD_ART_MIN, round(canvas_height * scale) + _BOARD_PADDING)
+    scale = min(
+        scale,
+        (panel_width - _BOARD_PADDING) / canvas_width,
+        (art_height - _BOARD_PADDING) / canvas_height,
+    )
+    image = _new_rgba((panel_width * option_count, art_height + _BOARD_FOOTER))
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
+    rendered_width = canvas_width * scale
+    rendered_height = canvas_height * scale
     for index, option in enumerate(draft["options"]):
-        origin_x = index * panel_width
+        panel_x = index * panel_width
         if index:
-            draw.line((origin_x, 0, origin_x, image.height), fill=DIVIDER, width=2)
-        _draw_option(image, option, (origin_x + 22, 20), 0.84)
-        draw.text((origin_x + panel_width // 2, 12), option["optionId"], fill=TEXT, font=font, anchor="ma")
-        draw.text((origin_x + 18, art_height + 18), option["title"], fill=TEXT, font=font)
-        draw.text((origin_x + 18, art_height + 42), option["caption"][:42], fill=TEXT, font=font)
+            draw.line((panel_x, 0, panel_x, image.height), fill=DIVIDER, width=2)
+        origin = (
+            round(panel_x + (panel_width - rendered_width) / 2),
+            round((art_height - rendered_height) / 2),
+        )
+        _draw_option(image, option, origin, scale)
+        draw.text((panel_x + panel_width // 2, 12), option["optionId"], fill=TEXT, font=font, anchor="ma")
+        draw.text((panel_x + 18, art_height + 18), option["title"], fill=TEXT, font=font)
+        draw.text((panel_x + 18, art_height + 42), option["caption"][:42], fill=TEXT, font=font)
     return image
 
 
@@ -208,7 +251,7 @@ def render_preview(
         round((preview_width - canvas_width * scale) / 2),
         round((preview_height - canvas_height * scale) / 2),
     )
-    image = Image.new("RGBA", (preview_width, preview_height), BACKGROUND)
+    image = _new_rgba((preview_width, preview_height))
     _draw_option(image, option, origin, scale)
     return image
 

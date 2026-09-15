@@ -102,7 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
     record_commands = records.add_subparsers(dest="command", required=True)
     validate = record_commands.add_parser("validate")
     validate.add_argument("path")
-    validate.add_argument("--schema", choices=["auto", "artifact", "pose-draft", "pose-card"], default="auto")
+    validate.add_argument("--schema", choices=["auto", "artifact", "pose-draft", "pose-card", "invocation", "delivery", "failure"], default="auto")
     validate.add_argument("--root")
     validate.add_argument("--verify", action="store_true")
     validate.set_defaults(handler=_records_validate)

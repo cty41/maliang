@@ -7,13 +7,16 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
-from .core import MaLiangError, contained_path
+from .core import MaLiangError, read_contained_bytes
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _SCHEMA_ALIASES = {
     "artifact": "artifact",
     "pose-draft": "pose-draft",
     "pose-card": "pose-card",
+    "invocation": "invocation",
+    "delivery": "delivery",
+    "failure": "failure",
 }
 
 
@@ -38,9 +41,8 @@ def validate_artifact(value: Any, *, root: str | Path | None = None, verify: boo
     if verify:
         if root is None:
             raise RecordValidationError("root is required when verifying bytes")
-        target = contained_path(root, normalized)
         try:
-            actual = hashlib.sha256(target.read_bytes()).hexdigest()
+            actual = hashlib.sha256(read_contained_bytes(root, normalized)).hexdigest()
         except OSError as exc:
             raise RecordValidationError(f"cannot read artifact: {normalized}") from exc
         if actual != digest:
@@ -55,6 +57,13 @@ def load_json(path: str | Path) -> Any:
         raise RecordValidationError(f"cannot load JSON record: {exc}") from exc
 
 
+def _load_contained_json(root: Path, relative: str) -> Any:
+    try:
+        return json.loads(read_contained_bytes(root, relative).decode("utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise RecordValidationError(f"cannot load JSON record: {exc}") from exc
+
+
 def infer_schema(record: Any) -> str:
     if not isinstance(record, Mapping):
         raise RecordValidationError("record must be an object")
@@ -63,34 +72,71 @@ def infer_schema(record: Any) -> str:
         for name in _SCHEMA_ALIASES:
             if f"/{name}.schema.json" in marker or marker.endswith(f"/{name}.json"):
                 return name
-    if set(record) == {"path", "sha256"}:
+    if set(record) - {"$schema"} == {"path", "sha256"}:
         return "artifact"
     if "options" in record and "visualMoment" in record:
         return "pose-draft"
     if "poseProofId" in record and "selectedOption" in record:
         return "pose-card"
+    if "attemptId" in record and "request" in record and "requestedAt" in record:
+        return "invocation"
+    if "deliveryId" in record or ("artifact" in record and "deliveredAt" in record):
+        return "delivery"
+    if "failureId" in record or ("failedAt" in record and "retryable" in record):
+        return "failure"
     raise RecordValidationError("cannot infer record schema; pass --schema")
 
 
 def validate_record(record: Any, schema: str = "auto", *, root: str | Path | None = None, verify: bool = False) -> dict[str, Any]:
     kind = infer_schema(record) if schema == "auto" else schema
+    if not isinstance(record, Mapping):
+        raise RecordValidationError("record must be an object")
+    value = dict(record)
+    if "$schema" in value:
+        if not isinstance(value["$schema"], str):
+            raise RecordValidationError("$schema must be text")
+        value.pop("$schema")
+    if "schemaVersion" in value and (isinstance(value["schemaVersion"], bool) or not isinstance(value["schemaVersion"], int)):
+        raise RecordValidationError("schemaVersion must be an integer")
     if kind == "artifact":
-        return validate_artifact(record, root=root, verify=verify)
+        return validate_artifact(value, root=root, verify=verify)
     if kind in {"pose-draft", "pose-card"}:
         from .pose import validate_card, validate_draft
-        return validate_draft(record) if kind == "pose-draft" else validate_card(record)
+        return (validate_draft(value, root=root, verify=verify) if kind == "pose-draft"
+                else validate_card(value, root=root, verify=verify))
+    if kind in {"invocation", "delivery", "failure"}:
+        from .workflow import validate_delivery, validate_failure, validate_invocation
+        if kind == "delivery":
+            return validate_delivery(value, root=root, verify=verify)
+        return validate_invocation(value) if kind == "invocation" else validate_failure(value)
     raise RecordValidationError(f"unknown schema: {kind}")
 
 
 def check_tree(root: str | Path, *, verify: bool = False) -> tuple[int, list[str]]:
-    base = Path(root).resolve()
+    base = Path(root)
+    if not base.exists():
+        raise RecordValidationError(f"record root does not exist: {base}")
+    if not base.is_dir():
+        raise RecordValidationError(f"record root is not a directory: {base}")
+    base = base.resolve()
     errors: list[str] = []
     count = 0
+    invocation_ids: set[str] = set()
+    outcomes: list[tuple[str, str]] = []
     for path in sorted(base.rglob("*.json")):
         count += 1
+        relative = path.relative_to(base).as_posix()
         try:
-            record = load_json(path)
-            validate_record(record, root=base, verify=verify)
-        except RecordValidationError as exc:
-            errors.append(f"{path.relative_to(base).as_posix()}: {exc}")
+            record = _load_contained_json(base, relative)
+            kind = infer_schema(record)
+            validated = validate_record(record, kind, root=base, verify=verify)
+            if kind == "invocation":
+                invocation_ids.add(validated["invocationId"])
+            elif kind in {"delivery", "failure"}:
+                outcomes.append((relative, validated["invocationId"]))
+        except MaLiangError as exc:
+            errors.append(f"{relative}: {exc}")
+    for relative, invocation_id in outcomes:
+        if invocation_id not in invocation_ids:
+            errors.append(f"{relative}: invocationId does not reference an invocation in this tree: {invocation_id}")
     return count, errors

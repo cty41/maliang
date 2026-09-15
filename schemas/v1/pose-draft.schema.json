@@ -1,16 +1,60 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/cty41/maliang/schemas/v1/pose-draft.schema.json",
+  "$id": "https://raw.githubusercontent.com/cty41/maliang/v0.1.0/schemas/v1/pose-draft.schema.json",
   "title": "MaLiang pose draft v1",
+  "description": "Structural validation is self-contained; maliang_art.pose.validate_draft also checks that coordinates and head radius fit the declared canvas and that option IDs are unique.",
   "$defs": {
-    "point": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 0, "maximum": 8191}, {"type": "integer", "minimum": 0, "maximum": 8191}], "items": false},
+    "nonBlank": {"type": "string", "pattern": "\\S"},
+    "point": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {"type": "integer", "minimum": 0, "maximum": 8191},
+        {"type": "integer", "minimum": 0, "maximum": 8191}
+      ],
+      "items": false
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\\/$)[^\\\\]+$"
+        },
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "visualMoment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer", "phase", "spriteRole"],
+      "properties": {
+        "consumer": {"$ref": "#/$defs/nonBlank"},
+        "phase": {"$ref": "#/$defs/nonBlank"},
+        "spriteRole": {"$ref": "#/$defs/nonBlank"}
+      }
+    },
     "option": {
-      "type": "object", "additionalProperties": false,
+      "type": "object",
+      "additionalProperties": false,
       "required": ["optionId", "title", "caption", "head", "spine", "segments", "supportPoints", "contactPoints", "equipmentAxis"],
       "properties": {
         "optionId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
-        "title": {"type": "string", "minLength": 1}, "caption": {"type": "string", "minLength": 1},
-        "head": {"type": "object", "additionalProperties": false, "required": ["center", "radius"], "properties": {"center": {"$ref": "#/$defs/point"}, "radius": {"type": "integer", "minimum": 1, "maximum": 2048}}},
+        "title": {"$ref": "#/$defs/nonBlank"},
+        "caption": {"$ref": "#/$defs/nonBlank"},
+        "head": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["center", "radius"],
+          "properties": {
+            "center": {"$ref": "#/$defs/point"},
+            "radius": {"type": "integer", "minimum": 1, "maximum": 2048}
+          }
+        },
         "spine": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/point"}},
         "segments": {"type": "array", "minItems": 1, "items": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/point"}}},
         "supportPoints": {"type": "array", "items": {"$ref": "#/$defs/point"}},
@@ -19,13 +63,18 @@
       }
     }
   },
-  "type": "object", "additionalProperties": false,
+  "type": "object",
+  "additionalProperties": false,
   "required": ["schemaVersion", "assetId", "characterId", "poseId", "direction", "visualMoment", "canvas", "options"],
   "properties": {
-    "schemaVersion": {"const": 1}, "assetId": {"type": "string", "minLength": 1}, "characterId": {"type": "string", "minLength": 1}, "poseId": {"type": "string", "minLength": 1},
+    "schemaVersion": {"const": 1},
+    "assetId": {"$ref": "#/$defs/nonBlank"},
+    "characterId": {"$ref": "#/$defs/nonBlank"},
+    "poseId": {"$ref": "#/$defs/nonBlank"},
     "direction": {"enum": ["down-right", "up-left", "down-left", "up-right", "non-directional"]},
-    "visualMoment": {"type": "object", "additionalProperties": false, "required": ["consumer", "phase", "spriteRole"], "properties": {"consumer": {"type": "string", "minLength": 1}, "phase": {"type": "string", "minLength": 1}, "spriteRole": {"type": "string", "minLength": 1}}},
-    "canvas": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 16, "maximum": 8192}}, "options": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/option"}},
-    "historicalEvidence": {"$ref": "artifact.schema.json"}
+    "visualMoment": {"$ref": "#/$defs/visualMoment"},
+    "canvas": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 16, "maximum": 8192}},
+    "options": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/option"}},
+    "historicalEvidence": {"$ref": "#/$defs/artifact"}
   }
 }
