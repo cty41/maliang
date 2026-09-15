@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "licenseReceiptId": "public-artifact-license-67fa3dca88379dbd",
+  "artifacts": [
+    {
+      "path": "Tools/artworks/poet_five_red_chow/pose-proofs/poet_cast_dr_sheathed_focus_draft_v1.json",
+      "sha256": "a0961abfb09fe6feedbaaa7ca2790a8d91b6bdf4151bc648faaa4f7372fe3f3d"
+    },
+    {
+      "path": "Tools/artworks/poet_five_red_chow/pose-proofs/poet_cast_dr_sheathed_focus_v1.json",
+      "sha256": "51865e9d7f171fa781ff64a34f7f7cdd31a42479a9b1864ce62dda5fa446dadd"
+    }
+  ],
+  "fromLicense": "project-owned",
+  "toLicense": "CC-BY-4.0",
+  "reviewer": "cty41",
+  "reason": "cty41 authorizes these exact Poet Pose Proof JSON records for the public MaLiang tutorial",
+  "decidedAt": "2026-09-14T23:06:49.6906870+08:00"
+}

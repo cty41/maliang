@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "failureId": "generation-failure-f9bcfc19b9c8d916",
+  "invocationId": "invocation-6b74715870869572",
+  "failedAt": "2026-01-01T11:00:01Z",
+  "category": "provider-unavailable",
+  "message": "Synthetic failure for documentation",
+  "retryable": true,
+  "details": {
+    "synthetic": true
+  }
+}

@@ -1,0 +1,19 @@
+version = 1
+
+[[annotations]]
+path = [".gitattributes", ".github/**", ".gitignore", "*.md", "pyproject.toml", "schemas/**", "src/**", "tests/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 MaLiang contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["examples/synthetic/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 MaLiang contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["examples/poet-cast/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "cty41"
+SPDX-License-Identifier = "CC-BY-4.0"

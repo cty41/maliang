@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "assetId": "poet-five-red-chow-cast-dr-sheathed-focus-v1",
+  "characterId": "poet-five-red-chow",
+  "poseId": "cast",
+  "direction": "down-right",
+  "visualMoment": {
+    "consumer": "Poet Cast presentation cue",
+    "phase": "action-peak",
+    "spriteRole": "readable pre-release focus pose; release and magic remain VFX responsibilities"
+  },
+  "canvas": [256, 256],
+  "options": [
+    {
+      "optionId": "A",
+      "title": "forward guide + chest hand",
+      "caption": "one paw guides while the other anchors the chest",
+      "head": {"center": [110, 52], "radius": 29},
+      "spine": [[110, 81], [104, 168]],
+      "segments": [
+        [[109, 105], [69, 135], [99, 142]],
+        [[109, 104], [160, 137], [178, 126]],
+        [[104, 168], [72, 230]],
+        [[104, 168], [142, 230]]
+      ],
+      "supportPoints": [[72, 230], [142, 230]],
+      "contactPoints": [[99, 142]],
+      "equipmentAxis": null
+    },
+    {
+      "optionId": "B",
+      "title": "hands gathered at chest",
+      "caption": "compact two-paw focus with a stable grounded base",
+      "head": {"center": [126, 52], "radius": 29},
+      "spine": [[126, 81], [122, 168]],
+      "segments": [
+        [[125, 105], [89, 139], [123, 145]],
+        [[125, 105], [163, 139], [123, 145]],
+        [[122, 168], [88, 230]],
+        [[122, 168], [157, 230]]
+      ],
+      "supportPoints": [[88, 230], [157, 230]],
+      "contactPoints": [[123, 145]],
+      "equipmentAxis": [[88, 176], [172, 116]]
+    },
+    {
+      "optionId": "C",
+      "title": "raised hand + forward guide",
+      "caption": "larger casting silhouette with one raised paw",
+      "head": {"center": [132, 52], "radius": 29},
+      "spine": [[132, 81], [126, 168]],
+      "segments": [
+        [[131, 107], [91, 60], [82, 80]],
+        [[131, 107], [180, 139], [199, 126]],
+        [[126, 168], [92, 230]],
+        [[126, 168], [160, 230]]
+      ],
+      "supportPoints": [[92, 230], [160, 230]],
+      "contactPoints": [[91, 60]],
+      "equipmentAxis": null
+    }
+  ],
+  "historicalEvidence": {
+    "path": "Tools/artworks/poet_five_red_chow/reviews/poet_cast_dr_three_pose_stick_preview_v03.png",
+    "sha256": "857961904deb11d123b4fb4aaccc8926fdfc5393ba6e3be8036d5c4f65350bb6"
+  }
+}

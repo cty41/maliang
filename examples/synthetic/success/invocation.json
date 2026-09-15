@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "invocationId": "invocation-ea52a0dad3845016",
+  "attemptId": "synthetic-success-a001",
+  "provider": "offline-example",
+  "model": "synthetic-circle-v1",
+  "request": {
+    "prompt": "one orange circle on transparency",
+    "size": [
+      64,
+      64
+    ]
+  },
+  "requestedAt": "2026-01-01T10:00:00Z"
+}

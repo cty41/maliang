@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "deliveryId": "delivery-c3b1a05d44ce0c02",
+  "invocationId": "invocation-ea52a0dad3845016",
+  "artifact": {
+    "path": "examples/synthetic/success/delivery.png",
+    "sha256": "3b99bc4da5cd0aa13eb1ae93e1ebf39cf85d046d4f46b1834077324ca778a385"
+  },
+  "deliveredAt": "2026-01-01T10:00:01Z",
+  "metadata": {
+    "synthetic": true
+  }
+}

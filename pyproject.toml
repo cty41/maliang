@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling>=1.26,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "maliang-game-art"
+version = "0.1.0"
+description = "Deterministic records and review tools for game-art workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "LICENSES/MIT.txt", "LICENSES/CC-BY-4.0.txt"]
+authors = [{ name = "MaLiang contributors" }]
+keywords = ["game-art", "art-pipeline", "deterministic", "provenance"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Multimedia :: Graphics",
+]
+dependencies = ["Pillow>=10.4,<13"]
+
+[project.optional-dependencies]
+test = ["pytest>=8.2,<9", "build>=1.2,<2"]
+
+[project.scripts]
+maliang-art = "maliang_art.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/cty41/maliang"
+Repository = "https://github.com/cty41/maliang"
+Issues = "https://github.com/cty41/maliang/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maliang_art"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"schemas" = "maliang_art/schemas"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/maliang_art", "schemas", "tests", "examples", "LICENSE", "LICENSES", "REUSE.toml", "README.md", "README.zh-CN.md", "SECURITY.md", "CONTRIBUTING.md", "EXTRACTED_FROM.md"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]

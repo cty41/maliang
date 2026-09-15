@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cty41/maliang/schemas/v1/pose-card.schema.json",
+  "title": "MaLiang selected pose card v1",
+  "type": "object",
+  "description": "Validated by maliang_art.pose.validate_card; poseProofId binds the canonical payload.",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "poseProofId", "assetId", "characterId", "poseId", "direction", "canvas", "visualMoment", "selectedOption", "selection"],
+  "properties": {
+    "schemaVersion": {"const": 1}, "poseProofId": {"type": "string", "pattern": "^pose-proof-[0-9a-f]{16}$"},
+    "assetId": {"type": "string", "minLength": 1}, "characterId": {"type": "string", "minLength": 1}, "poseId": {"type": "string", "minLength": 1},
+    "direction": {"enum": ["down-right", "up-left", "down-left", "up-right", "non-directional"]}, "canvas": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 16, "maximum": 8192}},
+    "visualMoment": {"type": "object"}, "selectedOption": {"$ref": "pose-draft.schema.json#/$defs/option"}, "historicalEvidence": {"$ref": "artifact.schema.json"},
+    "selection": {"type": "object", "additionalProperties": false, "required": ["optionId", "reviewer", "reason", "rejectedOptions", "selectedAt"], "properties": {"optionId": {"type": "string"}, "reviewer": {"type": "string", "minLength": 1}, "reason": {"type": "string", "minLength": 1}, "selectedAt": {"type": "string"}, "rejectedOptions": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["optionId", "reason"], "properties": {"optionId": {"type": "string"}, "reason": {"type": "string", "minLength": 1}}}}}}
+  }
+}
