@@ -34,6 +34,9 @@ maliang-art records validate delivery.json --schema delivery --root . --verify
 maliang-art records validate examples/poet-cast/draft.json --schema pose-draft
 maliang-art records check path/to/record-tree
 maliang-art review validate rule review-rule.json --authority-reviewer art-director
+maliang-art flow show-default-template
+maliang-art flow validate path/to/policy.yaml
+maliang-art flow transitions path/to/policy.yaml --state draft
 ```
 
 Pose canvases are record-defined; previews default to half the canvas dimensions
@@ -55,6 +58,28 @@ from maliang_art.workflow import validate_invocation, validate_delivery, validat
 The pure review API is available from `maliang_art.review`; structural ports are
 in `maliang_art.ports`, with JSON/Pillow adapters in `maliang_art.adapters`.
 Versioned JSON Schemas are shipped under `schemas/v1/`.
+
+## State machine core
+
+`maliang_art.statemachine` loads a YAML policy (states, transitions, optional
+steps, project-level policy values) and evaluates transitions in memory.
+`StateMachine.apply` returns a transition record and does not publish it to
+disk; built-in image steps may still write the image paths they are given.
+The shipped default template is `draft → review → done/rejected` with an
+empty approver list that projects must fill in.
+
+```console
+maliang-art flow show-default-template
+maliang-art flow validate path/to/policy.yaml
+maliang-art flow transitions path/to/policy.yaml --state draft
+```
+
+```python
+from maliang_art.statemachine import load_policy, StateMachine
+```
+
+Projects supply YAML policy and reviewer values; the library does not hard-code
+project identity, canvas sizes, or approvers.
 
 ## Safety and scope
 

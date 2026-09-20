@@ -18,6 +18,9 @@ maliang-art pose render-options --spec draft.json --output board.png
 maliang-art records validate draft.json --schema pose-draft
 maliang-art records validate examples/poet-cast/draft.json --schema pose-draft
 maliang-art records check path/to/record-tree
+maliang-art flow show-default-template
+maliang-art flow validate path/to/policy.yaml
+maliang-art flow transitions path/to/policy.yaml --state draft
 ```
 
 `maliang-game-art` 是发行名；v0.1.0 通过 GitHub tag 发布，不冒用 PyPI 上
@@ -25,6 +28,20 @@ maliang-art records check path/to/record-tree
 
 选择姿态时必须显式填写 reviewer，并为每个未选方案提供原因；工具不绑定
 任何特定人员。相同内容可幂等发布到同一路径，不同内容会触发碰撞错误。
+
+## 状态机内核
+
+`maliang_art.statemachine` 用 YAML 策略描述状态、转换、可选步骤与项目策略
+（如审批人列表），并在内存中求值转换。`StateMachine.apply` 返回转换记录，
+**不**把该记录发布到磁盘；内置图像步骤仍可能写入调用方提供的图片路径。
+内置默认模板为 `draft → review → done/rejected`，`approvers` 默认为空，
+由项目自行填写。
+
+```python
+from maliang_art.statemachine import load_policy, StateMachine
+```
+
+库不写死项目身份、画布尺寸或审批人。
 
 代码与 Python 发行包采用 MIT；仅存在于仓库、不会打入 sdist 的
 `examples/poet-cast/` 按 CC BY 4.0 提供，并通过 `assets.json` 固定六个

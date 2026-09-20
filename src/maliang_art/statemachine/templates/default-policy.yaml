@@ -1,0 +1,23 @@
+schemaVersion: 1
+name: default-art-pipeline
+states:
+  draft:
+  review:
+  done:
+  rejected:
+transitions:
+  - id: submit-for-review
+    from: [draft]
+    to: review
+  - id: approve
+    from: [review]
+    to: done
+    require:
+      approverIn: policy.approvers
+  - id: reject
+    from: [review]
+    to: rejected
+    require:
+      approverIn: policy.approvers
+policy:
+  approvers: []

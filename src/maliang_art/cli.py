@@ -11,6 +11,7 @@ from .core import MaLiangError
 from .pose import load_draft, parse_rejected, render_board, render_preview, save_png, select_option, write_card
 from .records import check_tree, load_json, validate_record
 from . import review
+from . import statemachine
 
 
 def _parse_dimensions(value: str) -> tuple[int, int]:
@@ -74,6 +75,27 @@ def _review_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _flow_validate(args: argparse.Namespace) -> int:
+    policy = statemachine.load_policy(args.path)
+    print(f"valid policy: {policy.name}")
+    return 0
+
+
+def _flow_show_default_template(_args: argparse.Namespace) -> int:
+    sys.stdout.write(statemachine.default_template_text())
+    return 0
+
+
+def _flow_transitions(args: argparse.Namespace) -> int:
+    policy = statemachine.load_policy(args.path)
+    if args.state not in policy.states:
+        raise MaLiangError(f"unknown state: {args.state}")
+    for transition in policy.transitions:
+        if args.state in transition.from_states:
+            print(f"{transition.transition_id} -> {transition.to_state}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maliang-art", description="Deterministic game-art workflow records")
     groups = parser.add_subparsers(dest="group", required=True)
@@ -118,6 +140,18 @@ def build_parser() -> argparse.ArgumentParser:
     review_validate.add_argument("path")
     review_validate.add_argument("--authority-reviewer", required=True, help="human authority identity for project-bound records")
     review_validate.set_defaults(handler=_review_validate)
+
+    flow = groups.add_parser("flow", help="validate state-machine policies and inspect transitions")
+    flow_commands = flow.add_subparsers(dest="command", required=True)
+    flow_validate = flow_commands.add_parser("validate")
+    flow_validate.add_argument("path")
+    flow_validate.set_defaults(handler=_flow_validate)
+    flow_template = flow_commands.add_parser("show-default-template")
+    flow_template.set_defaults(handler=_flow_show_default_template)
+    flow_transitions = flow_commands.add_parser("transitions")
+    flow_transitions.add_argument("path")
+    flow_transitions.add_argument("--state", required=True)
+    flow_transitions.set_defaults(handler=_flow_transitions)
     return parser
 
 
