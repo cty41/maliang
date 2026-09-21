@@ -3,7 +3,7 @@ feature: state-machine-core
 status: delivered
 updated: 2026-09-10
 branch: feat/state-machine-core
-commits: 00d772ffe57c610c3217b8294d6b2794df175ca2..00d772ffe57c610c3217b8294d6b2794df175ca2
+commits: 00d772ffe57c610c3217b8294d6b2794df175ca2..2e845ab
 ---
 
 # 状态机内核（State Machine Core）
