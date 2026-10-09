@@ -1,0 +1,48 @@
+# Pilot policy — mechanism from MaLiang, values here.
+# No approverIn list: the developer supervising the agent is recorded via apply(reviewer=...).
+schemaVersion: 1
+name: art-pilot
+states:
+  draft:
+    description: intent written; waiting for generation or pose selection
+  generated:
+    description: raw image exists and invocation/delivery recorded
+  prepared:
+    description: chroma-key applied; transparent PNG
+  aligned:
+    description: canvas-aligned candidate ready for 150px review
+  review:
+    description: awaiting human pass/fail against review/rules.yaml
+  done:
+    description: accepted candidate archived
+  rejected:
+    description: rejected; reason stored
+transitions:
+  - id: record-generation
+    from: [draft]
+    to: generated
+  - id: chroma-key
+    from: [generated]
+    to: prepared
+    steps: [clean]
+  - id: align-canvas
+    from: [prepared]
+    to: aligned
+    steps: [fit]
+  - id: submit-for-review
+    from: [aligned]
+    to: review
+  - id: approve
+    from: [review]
+    to: done
+  - id: reject
+    from: [review]
+    to: rejected
+steps:
+  clean:
+    action: chroma-key
+    key: "#FF00FF"
+    tolerance: 40
+  fit:
+    action: align-canvas
+    canvas: [256, 256]

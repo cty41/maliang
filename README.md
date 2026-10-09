@@ -47,6 +47,61 @@ person. Every unselected option needs one reason. Existing output bytes are
 immutable: repeating identical work succeeds, while different content at the
 same path fails.
 
+## Offline design CLI (source checkout)
+
+The new design entry is not part of the v0.1.0 tag above. In a checkout containing
+it, install with `python -m pip install .` and provide the explicit JSON records
+defined by `schemas/v1/art-family-contract.schema.json` and
+`schemas/v1/sprite-slice-draft.schema.json`:
+
+```console
+maliang-art design validate --contract family.json --draft slice.json
+maliang-art design compile --contract family.json --draft slice.json --output-dir work/design-v1
+```
+
+`validate` writes JSON `{ "valid": true, "diagnostics": [] }` on success (exit 0).
+Invalid/incomplete records, missing files and malformed JSON produce exit 1 and
+JSON diagnostics with `path`, `code`, and `message`; it does not guess missing
+art decisions. `compile` uses the same visual validation and publishes `design.json`
+with a complete prompt, view/state tasks, inherited targets, ordered reference
+roles/hashes, pending acceptance requirements and context-board layout. By default
+it renders no images: `imageInputs` contains only the declared references in their
+original order. Family `variants` and numeric part coordinates are not required;
+topology parts can describe species structure with `id` and optional `description`.
+Visual shape intentions must be allowed by the family, not by the debug renderer.
+The supported camera profile is explicit isometric DR/UL with project-accepted
+mirror-derived directions. This prepares an execution brief, not an approved design.
+
+The existing capsule/ball renderer is available only as an optional debug mode:
+
+```console
+maliang-art design compile --contract family.json --draft slice.json --output-dir work/debug-v1 --debug-geometry
+```
+
+This mode requires explicit numeric variants and part anchor/size pairs, validates
+layout bounds, and additionally publishes `guides/*.png`. Its artifacts are labeled
+**debug-layout**, **unapproved**, **not-generation-input** and never enter
+`imageInputs`. Ellipsoid placeholders and screen-direction triangles show code
+layout only: they do not prove species, silhouette design, DR/UL projection,
+action pose, style, core measurements or cross-view/state consistency. Their
+coordinates do not become generation instructions. No debug layout needs to be
+selected or approved before visual exploration.
+
+Success prints a JSON file manifest; publication/path errors fail nonzero on
+stderr. Identical reruns keep existing bytes; different bytes at an existing
+file are rejected. Publication is immutable per file, not a multi-file transaction:
+an interrupted/failed debug run may leave guides, and an identical rerun can finish
+it. Use a new output directory for a changed brief or debug mode.
+
+Palette and artistic judgments remain pending human review; context boards are
+layouts, not future candidate images. Reference paths/hashes and borrowing roles
+are declarations only: this command neither reads/verifies nor copies reference
+images. Empty references support from-scratch exploration. Backend parameters and
+image-input submission remain unverified until bound by an execution adapter.
+There is no network/backend invocation, automatic human approval, candidate
+adoption, or production CLI; generation and exact-image human decisions remain
+separate project steps.
+
 ## Python API
 
 ```python

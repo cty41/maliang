@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "invocationId": "invocation-c048d79a20d07041",
+  "attemptId": "falcon-idle-a001",
+  "provider": "xiaomi-mimo-imagegen",
+  "model": "image_gen",
+  "request": {
+    "prompt": "capsule peregrine idle v02",
+    "image": "characters/falcon-idle/raw/source_v02.png"
+  },
+  "requestedAt": "2026-09-24T07:30:28Z"
+}

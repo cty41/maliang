@@ -1,0 +1,16 @@
+{
+  "characterId": "falcon-idle",
+  "state": "review",
+  "checks": [
+    "R1",
+    "R4",
+    "R5-preview-ready",
+    "R6-partial",
+    "R7"
+  ],
+  "failures": [
+    "R2 corner alpha != 0",
+    "R3 exact magenta residue pixels=1190"
+  ],
+  "preview": "D:\\codes\\art-pilot\\characters\\falcon-idle\\candidates\\aligned_v01_150.png"
+}
