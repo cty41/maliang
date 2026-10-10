@@ -79,26 +79,26 @@ class WheelResources(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "resource set"):
             self.module["verify_installed"](installed, hashes)
 
-    def test_current_installed_wheel_all_resources_match(self):
-        import hashlib
-        import maliang_art.production
-        project = SCRIPT.parents[1]
-        lock = json.loads((project / "maliang.lock.json").read_text())
-        wheel = Path(lock["wheel"])
-        self.assertEqual(hashlib.sha256(wheel.read_bytes()).hexdigest(), lock["wheelSha256"])
-        package = Path(maliang_art.production.__file__).resolve().parents[1]
-        self.assertTrue(package.is_relative_to(project / ".venv"))
-        with zipfile.ZipFile(wheel) as archive:
-            hashes = {name: hashlib.sha256(archive.read(name)).hexdigest() for name in archive.namelist()
-                      if name.startswith("maliang_art/") and not name.endswith("/")
-                      and "__pycache__" not in Path(name).parts and Path(name).suffix not in {".pyc", ".pyo"}}
-        self.module["verify_installed"](package, hashes)
-        self.assertIn("maliang_art/statemachine/templates/default-policy.yaml", hashes)
-        self.assertIn("maliang_art/schemas/v1/art-family-contract.schema.json", hashes)
+    def test_wheel_smoke_installs_in_temporary_environment(self):
+        smoke = runpy.run_path(str(SCRIPT.with_name("smoke_wheel.py")))
+        wheel = self.repo / "synthetic-1.0-py3-none-any.whl"
+        with zipfile.ZipFile(wheel, "w") as archive:
+            for name, data in self.files.items():
+                archive.writestr(name, data)
+            archive.writestr("synthetic-1.0.dist-info/METADATA", "Metadata-Version: 2.1\nName: synthetic\nVersion: 1.0\n")
+            archive.writestr("synthetic-1.0.dist-info/WHEEL", "Wheel-Version: 1.0\nGenerator: test\nRoot-Is-Purelib: true\nTag: py3-none-any\n")
+            archive.writestr("synthetic-1.0.dist-info/RECORD", "")
+        result = smoke["smoke_wheel"](wheel, wheelhouse=self.repo)
+        self.assertEqual(result["verifiedResources"], len(self.files))
+        self.assertFalse(Path(result["environment"]).exists())
+
+    def test_interpreter_paths_cover_windows_and_unix(self):
+        self.assertEqual(self.module["venv_python"](self.repo, "nt"), self.repo / "Scripts/python.exe")
+        self.assertEqual(self.module["venv_python"](self.repo, "posix"), self.repo / "bin/python")
 
     def test_venv_is_created_only_when_interpreter_is_absent(self):
         self.run_lock(self.files)
-        python = self.repo / ".venv/Scripts/python.exe"
+        python = self.module["venv_python"](self.repo / ".venv")
         python.parent.mkdir(parents=True)
         argv = [str(SCRIPT), "--source-repo", str(self.repo), "--wheel", str(self.wheel),
                 "--wheelhouse", str(self.repo)]

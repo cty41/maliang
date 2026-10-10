@@ -1,6 +1,8 @@
 # falcon-idle
 
-游隼（peregrine）idle · down-right · 单张试作。
+游隼（peregrine）idle · 未来试作的目标意图，不是当前精选图的验收报告。
+
+当前展示图为 `raw/codex-idle.png`（512×512 RGB，品红底）。下面的 256×256、朝向与脚底基线是待执行目标。`draft-example.json` 是新教学 brief，绑定共用诗人参考，不声称复现 Codex 原始请求。
 
 ## 拓扑（真鸟）
 

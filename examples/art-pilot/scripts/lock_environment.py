@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import zipfile
@@ -11,6 +12,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
+
+
+def venv_python(root, platform=None):
+    return root / ("Scripts/python.exe" if (platform or os.name) == "nt" else "bin/python")
 
 
 def verify_installed(package_root, sources):
@@ -70,7 +75,7 @@ def main():
     if args.dry_run:
         print(json.dumps(lock, indent=2))
         return
-    python = PROJECT / ".venv" / "Scripts" / "python.exe"
+    python = venv_python(PROJECT / ".venv")
     if not args.record_existing_test_install:
         if not python.is_file():
             subprocess.run([sys.executable, "-m", "venv", str(PROJECT / ".venv")], check=True)

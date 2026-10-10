@@ -1,124 +1,83 @@
 # Runbook — 冻结请求与精确候选门禁
 
-本手册是当前入口；旧记录仍是实验历史。不要运行旧 run_flow/record_generation/review_check，它们已经禁用。不要把 reviewer=dev、脚本成功或预览存在当作人审通过。
+所有命令从马良仓库根目录执行，`python` 指当前环境的解释器；不依赖特定盘符、用户名或外部源码。下列生产命令是操作模板，不是声称已完成的真实调用。先准备自己的合法输入，使用全新 attempt 和输出路径；不要修改精选图片或补写历史回执。
 
-## 0. 环境
+## 0. 环境与可复现范围
 
-在父任务完成源码修订并重建 `D:\codes\maliang\dist` 的 wheel 后，准备依赖 wheelhouse，再重锁安装。脚本不构建或修改马良。
-
-```powershell
-# 仅下载依赖 wheel，无上传；已有离线 wheelhouse 时跳过。
-python -m pip download --only-binary=:all: --dest .wheelhouse 'Pillow>=10.4,<13' 'PyYAML>=6,<7'
-python scripts/lock_environment.py --source-repo D:\codes\maliang --wheel D:\codes\maliang\dist\maliang_game_art-0.1.0-py3-none-any.whl --wheelhouse .wheelhouse --dry-run
-python scripts/lock_environment.py --source-repo D:\codes\maliang --wheel D:\codes\maliang\dist\maliang_game_art-0.1.0-py3-none-any.whl --wheelhouse .wheelhouse
-& .\.venv\Scripts\python.exe -I -m unittest discover -s tests -v
+```text
+python -m pip install ".[test]"
+python -m pytest tests examples/art-pilot/tests
+python -m build
+python examples/art-pilot/scripts/smoke_wheel.py --wheel dist/maliang_game_art-0.1.0-py3-none-any.whl
 ```
 
-从项目外验证安装，不导入源码：
+默认 build 从 sdist 构建 wheel。smoke 使用 `sys.executable` 创建临时环境，按平台选择 `Scripts/python.exe` 或 `bin/python`，安装 wheel 并验证包内全部资源；不读取本机历史 lock、不导入工作树源码。传 `--wheelhouse <已有目录>` 可禁止索引访问。未指定时安装依赖可能联网下载，不涉及上传。
 
-```powershell
-& D:\codes\art-pilot\.venv\Scripts\python.exe -I -c 'import maliang_art.production; print(maliang_art.production.__file__)'
+如需长期的示例专用环境，可先准备依赖 wheelhouse，再运行精确源码/wheel核对工具。以下路径相对仓库根目录，`.wheelhouse` 是自行准备的本机目录：
+
+```text
+python examples/art-pilot/scripts/lock_environment.py --source-repo . --wheel dist/maliang_game_art-0.1.0-py3-none-any.whl --wheelhouse .wheelhouse --dry-run
+python examples/art-pilot/scripts/lock_environment.py --source-repo . --wheel dist/maliang_game_art-0.1.0-py3-none-any.whl --wheelhouse .wheelhouse
 ```
 
-锁记录的是 wheel 的真实字节哈希和观察时的源码状态，不伪造历史构建时刻。`--record-existing-test-install` 只用于记录现有测试 wheel 与源码差异，不是放行真实探索的替代方案。当前锁若为 test-only-pending-parent-rebuild，应先等待重建。
+dry-run 只核对并打印，不创建环境、安装或写锁。实际运行生成示例本机 `.venv` 和 `maliang.lock.json`，均不要提交。工具复用已有环境，但仍核对每个安装资源；陈旧 wheel 默认拒绝。`--record-existing-test-install` 只能记录已有测试安装差异，不能认证生产就绪。锁记录观察时的提交/dirty状态与真实字节，不伪造历史构建时刻。
 
-## 1. 编译 brief
+sdist 仅包含 art-pilot 脚本、合成测试、README，不包含本手册、真实图片、生产历史、本机锁或 policy。真实资产 hash / 来源审计属于仓库检查；所有行为回归使用临时合成 fixture。
 
-用本项目的 Python 执行 `-m maliang_art design compile`，提供现有合同、草案和全新的输出目录。默认包不得包含 debug 导引作为 imageInputs；调试布局不是身份或姿态证明。保留旧包，不覆盖旧图。
+## 1. 准备权威输入
 
-后续所有 source 参数都是 **相对 --project 根目录的路径**，不是相对 design.json，也不接受绝对路径或 `..` 越界。选择独立任务 `--task-index`；不得以任意文字 prompt 替代完整 compiled prompt。
+在自己的项目目录准备 `family-contract.json`、`draft.json`、`backend-params.json`，使用已安装库 `python -m maliang_art design compile --help` 查看编译参数，输出全新的 `packet/design.json`。不得把任意文字 prompt 当作 compiled prompt。
 
-## 2. prepare（实际调用前）
+所有 production source 参数相对 `--project` 根目录，不是相对 design.json；绝对路径、`..` 越界被拒绝。以下以自行准备的 `work/art-pilot` 为项目根目录，不假定该目录或文件已经存在。
 
-先保存后端真实参数 JSON，例如明确的 size/output_format/background；未知实际模型写 unknown，不猜订阅或模型标识。
+如使用精选样例，仓库参考路径为 `characters/shared/poet-idle-dr-style.png`，最终游隼为 `characters/falcon-idle/raw/codex-idle.png`（相对 `examples/art-pilot`）。先按资产清单核对当前派生哈希，并将合法参考复制到自己的项目；Draft 必须填写实际项目相对路径和当前字节哈希，不复用压缩前引用。参考的职责、允许借用与禁止借用需明确。
 
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py prepare --attempt falcon-v03 --contract characters/falcon-idle/family-contract.json --draft characters/falcon-idle/draft-v03.json --design characters/falcon-idle/design-packet-v03/design.json --parameters characters/falcon-idle/backend-params-v03.json --provider actual-provider --model unknown
+## 2. prepare / acceptance
+
+```text
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot acceptance --contract family-contract.json --draft draft.json --design packet/design.json
 ```
 
-prepare 必须提供权威合同与 Draft，使用安装包重新编译并精确核对 prompt、任务、输入图顺序/职责、acceptance、designId、targets 等执行字段；删改包以省略或降级必需项会报错。检查每张真实输入图的哈希，冻结输入图及权威合同/Draft 原字节。身份清单为编译 acceptance 的 identity ID，不另造 identity.feature 名称。未知 method/重复 ID/缺身份项报错；没有手填 required 参数。
+prepare 重新编译合同 / Draft 并核对 prompt、任务、输入顺序/职责、acceptance、designId、targets；冻结输入图及权威源字节。未知 method、重复 ID、缺身份项报错。`alpha-bounds` 对应 automatic，human 项必须由真实人类决定。没有手填 required 或 approve 开关。
 
-验收提取也必须验证同一份权威输入，不需要复制输出到 prepare：
+编辑仍须提供编辑任务自己的合同 / Draft / design，加 `--parent <精确父attempt>` 与 `--instruction <明确修改>`；父图作为第一张 edit-source，之后保持参考顺序。编辑记录不冒称原始生成。
 
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py acceptance --contract characters/falcon-idle/family-contract.json --draft characters/falcon-idle/draft-v03.json --design characters/falcon-idle/design-packet-v03/design.json
-# 兼容入口同样需要 --contract --draft --design：
-& .\.venv\Scripts\python.exe -I scripts/extract_acceptance.py --contract characters/falcon-idle/family-contract.json --draft characters/falcon-idle/draft-v03.json --design characters/falcon-idle/design-packet-v03/design.json
+## 3. 外部执行与完成
+
+库和脚本不自动调用图像服务。执行器必须读取 `production/attempts/<id>/prepared.json`，真实提交冻结 prompt、参数和输入图，并保留可核验工具记录。Codex provider 执行桥仍未实现，登录不是离线回归先决条件。
+
+成功回执必须包含：`preparedEventId`（原样）、`invocation`（完整对象，非字符串）、`outcome: "success"`、真实 `artifactSha256`、真实 `executionEvidence`。
+
+```text
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot complete --attempt bird-001 --receipt receipt.json --image output.png
 ```
 
-编辑时仍必须提供编辑任务对应的权威 `--contract --draft --design`，再加 `--parent <精确父 attempt>` 和 `--instruction <明确修改指令>`。父源图作为第一张 edit-source，之后按原包参考顺序排列；kind=edit，完整 brief、父源图和修改指令分别留证，不把编辑说成原始生成。
+失败使用 `fail --attempt bird-001 --category timeout --message <真实错误摘要>`，不能用失败调用编造成功图。complete 精确匹配准备事件、完整 invocation 与输出哈希，但手拼 receipt 本身不证明真实执行。
 
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py prepare --attempt falcon-v03-edit1 --contract characters/falcon-idle/family-contract.json --draft characters/falcon-idle/draft-v03-edit1.json --design characters/falcon-idle/design-packet-v03-edit1/design.json --parameters characters/falcon-idle/backend-params-v03.json --provider actual-provider --model unknown --parent falcon-v03 --instruction '仅按用户反馈修改，保持其余身份特征不变'
+已有外部图片使用 `import --attempt <新id> --contract ... --draft ... --design ... --image ... --provenance <真实来源> [--historical]`；不伪造 invocation、旧时间或批准。core 可能保存原始字节为 `source.bin`，这不改变图像内容，但这类生产记录不属于公开精选素材或发行包。
+
+V03 旧回执不可信：实际未提交图片参考、实际 prompt 与冻结包不一致，不能作为可执行模板。V04 / Codex 外部试作仅保留可证明事实和用户反馈，不补造完整链。展示偏好不等于新压缩派生已满足生产采用要求。
+
+## 4. 技术、人审与采用
+
+```text
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot technical --attempt bird-001
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot review --attempt bird-001 --decision-file human-decision.json
 ```
 
-## 3. 外部工具执行与 complete
+technical 解码实际图像，运行每个必需自动谓词并绑定精确候选；尺寸、非空 alpha、边界通过不能证明艺术质量。derive 仅支持 copy / flip-x，并绑定父候选；不是原生视角生图或隐式换手认可。
 
-Agent/项目执行器必须先读取 `production/attempts/<id>/prepared.json`，按其 invocation 执行真实服务，并保留真实工具回执。库和此脚本不调用服务、不证明服务确实接收图片；执行器必须真实提交冻结输入。
+人审 decision-file 必须由真实决定产生：`actorType: "human"`、真实 reviewer、候选完整 eventId/attemptId/artifact、`identityChecklist: ["identity"]`、非空真实 statement、真实带时区 decidedAt、adopt/reject/pending，以及全部必需 human 项的 pass/fail/pending/unsupported。Agent 不得为了推进流程编写真实 human pass。
 
-完成回执 JSON 格式：
+采用命令模板（尖括号替换为实际事件路径，不要原样执行）：
 
-```json
-{
-  "preparedEventId": "从 prepared.json 原样复制",
-  "invocation": "这里应是 prepared.json 中完整 invocation 对象，而非字符串",
-  "outcome": "success",
-  "artifactSha256": "实际交付文件 SHA-256",
-  "executionEvidence": "真实服务/tool 调用记录的位置和标识；不要伪造"
-}
+```text
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot adopt --attempt bird-001 --asset bird-idle --review production/events/<human-event>.json --result production/events/<automatic-event>.json
 ```
 
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py complete --attempt falcon-v03 --receipt characters/falcon-idle/receipt-v03.json --image characters/falcon-idle/raw/source-v03.png
-# 服务失败（无成功图）：
-& .\.venv\Scripts\python.exe -I scripts/production.py fail --attempt falcon-v03 --category timeout --message '真实错误摘要'
-```
-
-complete 必须精确匹配 prepared event、完整 invocation、成功回执、输出 SHA。人工拼一个 receipt 不能证明实际调用；不要用这种方式回填旧图。既有外部图应 `import --attempt ... --contract ... --draft ... --design ... --image ... --provenance ... [--historical]`，不会伪造 invocation 或旧时间。
-
-导入示例（仅在获得真实素材使用授权后执行；本轮不执行）：
-
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py import --attempt falcon-external-v01 --contract characters/falcon-idle/family-contract.json --draft characters/falcon-idle/draft-v03.json --design characters/falcon-idle/design-packet-v03/design.json --image characters/falcon-idle/raw/external-v01.png --provenance '实际外部作者、修改来源与授权记录'
-```
-
-存储保留 `source.bin` 的 core 格式；内容是原始图像字节，Pillow 根据签名仍可解码 PNG/JPEG。不是把原图改成无法解码的二进制格式。
-
-## 4. derive 与技术结果
-
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py derive --attempt falcon-v03-west --parent falcon-v03 --operation flip-x
-& .\.venv\Scripts\python.exe -I scripts/production.py technical --attempt falcon-v03
-```
-
-derive 只提供 copy / flip-x 确定性操作，绑定父源与参数；不是原生 UL 生图，也不隐式接受换手。每个 attempt ID 只能创建一次。technical 实际解码图像，对包中每个必需 alpha-bounds 项运行尺寸/非空 alpha/边界检查并保存精确候选证据，不提供手填 pass 开关。不以 alpha bbox 代替核心蒙版/接点或艺术判断。未知自动方法在 prepare 报错，不能降为 human 掩盖缺能力。
-
-## 5. 实际人类判断
-
-人类应查看精确候选与身份/风格/姿态等全清单。由真实用户决定生成 decision-file，字段包括：
-
-- `actorType: "human"`，`reviewer`（真实决定人的归属名称）；
-- `candidate`：当前 outcome 的 eventId、attemptId、artifact 全对象；
-- `identityChecklist: ["identity"]`；
-- `statement`：真实决定和反馈的非空原话/摘要；
-- `decidedAt`：真实带时区时间，不伪造过去时间；
-- `decision`：adopt/reject/pending；
-- `checklist`：design.json 全部必需 human 项的真实 pass/fail/pending/unsupported。
-
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py review --attempt falcon-v03 --decision-file characters/falcon-idle/human-decision-v03.json
-```
-
-Agent 不得为推进流程编写真实 human pass。合成测试 fixture 的假定人审不是生产认可。
-
-## 6. 采用与版本安全
-
-```powershell
-& .\.venv\Scripts\python.exe -I scripts/production.py adopt --attempt falcon-v03 --asset falcon-idle --review production/events/<human-review-event>.json --result production/events/<automatic-result-event>.json
-```
-
-每个必需 automatic 结果都要传一个 --result。漏技术项、人审漏项、pending/fail/unsupported、旧人审/旧结果绑定其他候选均拒绝；候选满足全部要求可直接 adopt，无需二次生成。采用事件不可变，current/falcon-idle.json 使用 core 的原子替换投影；新版本不覆盖旧产物或记录。
+每个必需 automatic 项需一个 `--result`。缺项、失败、pending/unsupported、旧人审或技术结果绑定其他候选均拒绝。满足完整门禁可直接采用，无需再次生成。事件不可覆盖，current projection 原子更新。
 
 ## 验证边界
 
-离线黑盒使用临时合成图片与明确的模拟执行/决定 fixture，验证路径隔离、输入顺序、全 acceptance、两版本、编辑/派生、导入/失败、门禁和原子投影。尚无真实参考图接收测试、真实视觉质量验收或真实人类采用；父任务重建后必须重锁和重跑。当前不迁移旧历史、不上传、不提交 Git、不改变 characters 原件。
+合成测试确认行为门禁，不确认真实参考图被服务接收、不确认几何/视觉质量、不代替真实人类采用。图片为用户自有 CC-BY-4.0 资产；库、代码和文档为 MIT。授权公开、用户偏好与正式 delivery 分开记录。没有 push、上传、PR 或 merge 隐含在这些命令中。

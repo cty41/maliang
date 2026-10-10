@@ -1,4 +1,4 @@
-# Pilot policy — mechanism from MaLiang, values here.
+# Illustrative policy only; curated assets carry no state or approval from this policy.
 # No approverIn list: the developer supervising the agent is recorded via apply(reviewer=...).
 schemaVersion: 1
 name: art-pilot
@@ -12,7 +12,7 @@ states:
   aligned:
     description: canvas-aligned candidate ready for 150px review
   review:
-    description: awaiting human pass/fail against review/rules.yaml
+    description: awaiting human pass/fail against a new run's explicit acceptance rules
   done:
     description: accepted candidate archived
   rejected:

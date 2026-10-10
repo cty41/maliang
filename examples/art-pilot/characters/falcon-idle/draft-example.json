@@ -1,7 +1,7 @@
 {
     "references":  [
                        {
-                           "path":  "refs/poet-idle-dr-style.png",
+                           "path":  "characters/shared/poet-idle-dr-style.png",
                            "sha256":  "ee4bc7fe07aa2e2d2cd96e9d1d9c62779d07b191e1e1dd2efe0e05c3f096e753",
                            "borrow":  [
                                           "capsule body language",

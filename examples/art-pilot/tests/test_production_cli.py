@@ -227,12 +227,14 @@ class ProductionCLI(unittest.TestCase):
         self.cli("adopt", "--attempt", edit["attemptId"], "--asset", "bird", "--review", self.event_path(review),
                  "--result", self.event_path(results[0]), ok=False)
 
-    def test_legacy_paths_are_disabled(self):
-        for name in ("record_generation.py", "run_flow.py", "review_check.py"):
+    def test_current_entrypoints_reject_legacy_approval_shortcuts(self):
+        for name in ("production.py", "extract_acceptance.py"):
             result = subprocess.run([sys.executable, "-I", str(PROJECT / "scripts" / name), "--decide", "approve"],
                                     cwd=self.root, capture_output=True, text=True)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Disabled legacy", result.stderr)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("usage:", result.stderr)
+        self.cli("adopt", "--attempt", "unreviewed", "--asset", "bird", ok=False)
+        self.assertFalse((self.root / "production/current/bird.json").exists())
         for path in (PROJECT / "scripts").glob("*.py"):
             self.assertNotIn("sys.path.insert", path.read_text())
 

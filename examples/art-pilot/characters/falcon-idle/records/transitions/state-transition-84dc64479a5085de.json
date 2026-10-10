@@ -1,1 +1,0 @@
-{"appliedAt":"2026-09-24T07:30:28Z","assetId":"falcon-idle","reviewer":"dev","schemaVersion":1,"state":"aligned","stepResults":[{"action":"align-canvas","detail":{"output":"D:\\codes\\art-pilot\\characters\\falcon-idle\\candidates\\aligned_v01.png","size":[256,256]},"ok":true,"stepId":"fit"}],"transitionId":"align-canvas","transitionRecordId":"state-transition-84dc64479a5085de"}

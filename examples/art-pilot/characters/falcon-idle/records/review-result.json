@@ -1,8 +1,0 @@
-{
-  "characterId": "falcon-idle",
-  "decision": "reject",
-  "reviewer": "dev",
-  "reason": "failed capsule-body composition; silhouette not in tactics capsule language",
-  "transitionRecordId": "state-transition-56634bec76b02004",
-  "decidedAt": "2026-09-24T07:24:55Z"
-}
