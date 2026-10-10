@@ -1,0 +1,100 @@
+{
+    "references":  [
+                       {
+                           "path":  "characters/shared/poet-idle-dr-style.png",
+                           "sha256":  "ee4bc7fe07aa2e2d2cd96e9d1d9c62779d07b191e1e1dd2efe0e05c3f096e753",
+                           "borrow":  [
+                                          "capsule body language",
+                                          "thick dark outline",
+                                          "flat color blocks",
+                                          "DR isometric camera feel"
+                                      ],
+                           "roles":  [
+                                         "style"
+                                     ],
+                           "forbid":  [
+                                          "dog face",
+                                          "ears",
+                                          "four paws",
+                                          "curled tail",
+                                          "red-brown palette",
+                                          "exact body width ratio",
+                                          "identity"
+                                      ]
+                       }
+                   ],
+    "identity":  {
+                     "priority":  [
+                                      "hooked-beak",
+                                      "folded-wings",
+                                      "malar-mark"
+                                  ],
+                     "forbiddenMirror":  [
+
+                                         ],
+                     "features":  [
+                                      "hooked-beak",
+                                      "malar-mark",
+                                      "folded-wings",
+                                      "two-feet"
+                                  ],
+                     "species":  "peregrine-falcon"
+                 },
+    "visualMoment":  [
+                         {
+                             "moment":  "alert upright, level gaze, wings tight to body",
+                             "coreTransform":  "idle-upright",
+                             "view":  "DR",
+                             "partChanges":  [
+
+                                             ],
+                             "state":  "idle"
+                         }
+                     ],
+    "targets":  {
+
+                },
+    "topology":  {
+                     "core":  "capsule-torso",
+                     "prohibited":  [
+                                        "arms",
+                                        "legs",
+                                        "long-tail",
+                                        "bulging-wings",
+                                        "mouse-ears",
+                                        "spread-wings",
+                                        "feather-texture",
+                                        "photorealistic",
+                                        "dog-face",
+                                        "four-paws",
+                                        "curled-tail"
+                                    ],
+                     "parts":  [
+                                   {
+                                       "id":  "beak",
+                                       "description":  "small hooked beak at upper front of capsule"
+                                   },
+                                   {
+                                       "id":  "malar-mark",
+                                       "description":  "dark cheek slash below eye"
+                                   },
+                                   {
+                                       "id":  "wing-patch",
+                                       "description":  "two folded wing slabs hugging body sides"
+                                   },
+                                   {
+                                       "id":  "tail-stub",
+                                       "description":  "short flat tail nub behind capsule"
+                                   },
+                                   {
+                                       "id":  "feet-pair",
+                                       "description":  "two short taloned feet on ground line"
+                                   }
+                               ]
+                 },
+    "paletteRoles":  {
+
+                     },
+    "silhouetteClass":  "capsule",
+    "schemaVersion":  1
+}

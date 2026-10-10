@@ -1,0 +1,175 @@
+from __future__ import annotations
+
+import textwrap
+from pathlib import Path
+
+import pytest
+
+from maliang_art.statemachine import (
+    PolicyValidationError,
+    StateMachine,
+    StateTransitionError,
+    load_policy,
+)
+from maliang_art.statemachine.config import PolicyModel, StepDecl, TransitionDecl
+
+
+def make_policy(*, approvers: list[str] | None = None, with_steps: bool = False) -> PolicyModel:
+    steps = {}
+    transitions = [
+        TransitionDecl("submit-for-review", ("draft",), "review", (), None),
+        TransitionDecl("approve", ("review",), "done", (), "policy.approvers"),
+    ]
+    if with_steps:
+        steps = {
+            "clean": StepDecl("clean", "chroma-key", {"key": "FF00FF", "tolerance": 0}),
+            "fit": StepDecl("fit", "align-canvas", {"canvas": [16, 16]}),
+            "bad": StepDecl("bad", "chroma-key", {"key": "not-a-key"}),
+        }
+        transitions = [
+            TransitionDecl("submit-for-review", ("draft",), "review", ("clean", "fit"), None),
+            TransitionDecl("approve", ("review",), "done", (), "policy.approvers"),
+            TransitionDecl("submit-bad", ("draft",), "review", ("bad",), None),
+        ]
+    return PolicyModel(
+        schema_version=1,
+        name="demo",
+        states=("draft", "review", "done", "rejected"),
+        transitions=tuple(transitions),
+        steps=steps,
+        policy={"approvers": [] if approvers is None else approvers},
+        source_path=None,
+    )
+
+
+def base_record(state: str = "draft") -> dict:
+    return {"schemaVersion": 1, "assetId": "asset-1", "state": state}
+
+
+def test_draft_to_review_success_record_shape():
+    machine = StateMachine(make_policy())
+    result = machine.apply(
+        base_record("draft"),
+        "submit-for-review",
+        reviewer="alice",
+        applied_at="2026-01-01T12:00:00Z",
+    )
+    record = result.record
+    assert record["schemaVersion"] == 1
+    assert record["state"] == "review"
+    assert record["assetId"] == "asset-1"
+    assert record["transitionId"] == "submit-for-review"
+    assert record["reviewer"] == "alice"
+    assert record["appliedAt"] == "2026-01-01T12:00:00Z"
+    assert record["stepResults"] == []
+    assert record["transitionRecordId"] == result.record_id
+    assert result.record_id.startswith("state-transition-")
+
+
+def test_wrong_state_rejected():
+    machine = StateMachine(make_policy())
+    with pytest.raises(StateTransitionError, match="not allowed from current state"):
+        machine.apply(base_record("review"), "submit-for-review", reviewer="alice", applied_at="2026-01-01T12:00:00Z")
+
+
+def test_unknown_transition_rejected():
+    machine = StateMachine(make_policy())
+    with pytest.raises(StateTransitionError, match="unknown transition"):
+        machine.apply(base_record("draft"), "nope", reviewer="alice", applied_at="2026-01-01T12:00:00Z")
+
+
+def test_approve_empty_approvers_rejected():
+    machine = StateMachine(make_policy(approvers=[]))
+    with pytest.raises(StateTransitionError, match="reviewer is not allowed"):
+        machine.apply(base_record("review"), "approve", reviewer="alice", applied_at="2026-01-01T12:00:00Z")
+
+
+def test_approve_with_allowed_reviewer():
+    machine = StateMachine(make_policy(approvers=["alice", "bob"]))
+    result = machine.apply(base_record("review"), "approve", reviewer="bob", applied_at="2026-01-01T12:00:00Z")
+    assert result.record["state"] == "done"
+
+
+def test_step_failure_does_not_return_success():
+    machine = StateMachine(make_policy(with_steps=True))
+    with pytest.raises(StateTransitionError, match="step failed: bad"):
+        machine.apply(
+            base_record("draft"),
+            "submit-bad",
+            reviewer="alice",
+            applied_at="2026-01-01T12:00:00Z",
+            context={"image_path": None},
+        )
+
+
+def test_step_order_in_results():
+    machine = StateMachine(make_policy(with_steps=True))
+    result = machine.apply(
+        base_record("draft"),
+        "submit-for-review",
+        reviewer="alice",
+        applied_at="2026-01-01T12:00:00Z",
+        context={"image_path": None},
+    )
+    actions = [item["action"] for item in result.record["stepResults"]]
+    assert actions == ["chroma-key", "align-canvas"]
+    assert all(item["detail"].get("skipped") is True for item in result.record["stepResults"])
+
+
+def test_can_apply_and_transitions_from():
+    machine = StateMachine(make_policy())
+    assert machine.can_apply("draft", "submit-for-review") is True
+    assert machine.can_apply("review", "submit-for-review") is False
+    assert machine.can_apply("draft", "missing") is False
+    ids = [item.transition_id for item in machine.transitions_from("draft")]
+    assert ids == ["submit-for-review"]
+
+
+def test_apply_validation_order_reviewer_before_state():
+    machine = StateMachine(make_policy())
+    with pytest.raises(StateTransitionError, match="reviewer must be non-empty text"):
+        machine.apply(base_record("done"), "submit-for-review", reviewer=" ", applied_at="2026-01-01T12:00:00Z")
+
+
+def test_apply_validation_order_unknown_transition_before_state():
+    machine = StateMachine(make_policy())
+    with pytest.raises(StateTransitionError, match="unknown transition"):
+        machine.apply(base_record("done"), "missing", reviewer="alice", applied_at="2026-01-01T12:00:00Z")
+
+
+def test_apply_validation_order_state_before_approver():
+    machine = StateMachine(make_policy(approvers=[]))
+    with pytest.raises(StateTransitionError, match="not allowed from current state"):
+        machine.apply(base_record("draft"), "approve", reviewer="alice", applied_at="2026-01-01T12:00:00Z")
+
+
+def test_missing_applied_at_timezone():
+    machine = StateMachine(make_policy())
+    with pytest.raises(StateTransitionError, match="timezone"):
+        machine.apply(base_record("draft"), "submit-for-review", reviewer="alice", applied_at="2026-01-01T12:00:00")
+
+
+def test_load_policy_from_yaml(tmp_path: Path):
+    path = tmp_path / "p.yaml"
+    path.write_text(
+        textwrap.dedent(
+            """
+            schemaVersion: 1
+            name: yaml-demo
+            states:
+              draft:
+              review:
+            transitions:
+              - id: submit-for-review
+                from: [draft]
+                to: review
+            policy:
+              approvers: []
+            """
+        ).lstrip(),
+        encoding="utf-8",
+    )
+    policy = load_policy(path)
+    machine = StateMachine(policy)
+    result = machine.apply(base_record("draft"), "submit-for-review", reviewer="x", applied_at="2026-01-01T00:00:00Z")
+    assert result.record["state"] == "review"

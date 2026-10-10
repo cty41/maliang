@@ -1,7 +1,7 @@
 version = 1
 
 [[annotations]]
-path = [".gitattributes", ".github/**", ".gitignore", "*.md", "pyproject.toml", "schemas/**", "src/**", "tests/**"]
+path = [".gitattributes", ".github/**", ".gitignore", "*.md", "pyproject.toml", "docs/**", "schemas/**", "src/**", "tests/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 MaLiang contributors"
 SPDX-License-Identifier = "MIT"
@@ -14,6 +14,18 @@ SPDX-License-Identifier = "MIT"
 
 [[annotations]]
 path = ["examples/poet-cast/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "cty41"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["examples/art-pilot/**/*.py", "examples/art-pilot/**/*.md", "examples/art-pilot/**/*.json", "examples/art-pilot/*.json", "examples/art-pilot/*.yaml", "examples/art-pilot/*.md"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 MaLiang contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["examples/art-pilot/characters/**/*.png"]
 precedence = "override"
 SPDX-FileCopyrightText = "cty41"
 SPDX-License-Identifier = "CC-BY-4.0"

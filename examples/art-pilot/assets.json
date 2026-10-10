@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "pathBase": "examples/art-pilot",
+  "attribution": "cty41",
+  "license": "CC-BY-4.0",
+  "status": "curated-visual-examples-not-production-approvals",
+  "assets": [
+    {
+      "id": "falcon",
+      "purpose": "Selected Codex falcon idle study",
+      "path": "characters/falcon-idle/raw/codex-idle.png",
+      "copyright": "cty41",
+      "license": "CC-BY-4.0",
+      "selection": {
+        "status": "user-selected-visual",
+        "scope": "Publication and visual direction only; not a geometry, alpha, production-gate or delivery approval."
+      },
+      "source": {
+        "retention": "Original retained outside the repository; not required to run this sample.",
+        "sha256": "3c996cac3a161571b7544fdb2158d9326b27dbecac169ca0e9efa9b4f9251c89",
+        "bytes": 1392427,
+        "dimensions": [
+          1254,
+          1254
+        ],
+        "mode": "RGB"
+      },
+      "derivative": {
+        "sha256": "9393f594dbf4f38ec200ce6989bc7579c90e23df29940067273d2ca024417942",
+        "bytes": 248140,
+        "dimensions": [
+          512,
+          512
+        ],
+        "mode": "RGB",
+        "alphaExtrema": [
+          255,
+          255
+        ]
+      },
+      "processing": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "operation": "resize",
+        "parameters": {
+          "size": [
+            512,
+            512
+          ],
+          "resample": "LANCZOS",
+          "quantization": null,
+          "optimize": true,
+          "compress_level": 9
+        },
+        "lossy": true,
+        "cropped": false,
+        "chromaKeyApplied": false,
+        "metadataChunksPreserved": [
+          "caBX",
+          "eXIf",
+          "iTXt"
+        ],
+        "metadataChunkSha256": {
+          "caBX": "e4f9122540ee5195a6a3f8dca8e4bfd837c901fa05411927534112eb1bd6bd85",
+          "eXIf": "4275da03eb9ebe15f23ae40f897e15ed7d21289289e931ee06fdb472c009c2a7",
+          "iTXt": "2fb84f185057cd08e91329772a6f7d98e95c230e2e57a2928fc7029dc2fc9b09"
+        },
+        "provenanceNote": "Source ancillary chunks are retained verbatim. Embedded source dimensions/signatures describe the source, not a new authenticated derivative. No new generation receipt is asserted."
+      },
+      "qualityReview": {
+        "comparison": "RGB, 64-color and 256-color MEDIANCUT/no-dither previews compared at 256px.",
+        "choice": "RGB retained to avoid eye/outline color loss and gradient banding; background texture and all visible marks remain."
+      }
+    },
+    {
+      "id": "goshawk",
+      "purpose": "Selected crested goshawk idle study",
+      "path": "characters/crested-goshawk-idle/raw/v01-a001.png",
+      "copyright": "cty41",
+      "license": "CC-BY-4.0",
+      "selection": {
+        "status": "user-selected-visual",
+        "scope": "Publication and visual direction only; not a geometry, alpha, production-gate or delivery approval."
+      },
+      "source": {
+        "retention": "Original retained outside the repository; not required to run this sample.",
+        "sha256": "782c51fb7bdadae24483f0036d889518114dde90d52fa26cad9c4fc353b9dd21",
+        "bytes": 1261083,
+        "dimensions": [
+          1254,
+          1254
+        ],
+        "mode": "RGB"
+      },
+      "derivative": {
+        "sha256": "ea442a95ad82d87cf0b89426f14a9aa36d8606a5294e5f1edb2e63c7313bfcbc",
+        "bytes": 231258,
+        "dimensions": [
+          512,
+          512
+        ],
+        "mode": "RGB",
+        "alphaExtrema": [
+          255,
+          255
+        ]
+      },
+      "processing": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "operation": "resize",
+        "parameters": {
+          "size": [
+            512,
+            512
+          ],
+          "resample": "LANCZOS",
+          "quantization": null,
+          "optimize": true,
+          "compress_level": 9
+        },
+        "lossy": true,
+        "cropped": false,
+        "chromaKeyApplied": false,
+        "metadataChunksPreserved": [
+          "caBX",
+          "eXIf",
+          "iTXt"
+        ],
+        "metadataChunkSha256": {
+          "caBX": "6cba91add6cd6355ca72e2de6d7553bfa13d1de03ec2b73dc42e6dcb139bfe16",
+          "eXIf": "4275da03eb9ebe15f23ae40f897e15ed7d21289289e931ee06fdb472c009c2a7",
+          "iTXt": "2fb84f185057cd08e91329772a6f7d98e95c230e2e57a2928fc7029dc2fc9b09"
+        },
+        "provenanceNote": "Source ancillary chunks are retained verbatim. Embedded source dimensions/signatures describe the source, not a new authenticated derivative. No new generation receipt is asserted."
+      },
+      "qualityReview": {
+        "comparison": "RGB, 64-color and 256-color MEDIANCUT/no-dither previews compared at 256px.",
+        "choice": "RGB retained to avoid eye/outline color loss and gradient banding; background texture and all visible marks remain."
+      }
+    },
+    {
+      "id": "poet",
+      "purpose": "Shared poet style reference",
+      "path": "characters/shared/poet-idle-dr-style.png",
+      "copyright": "cty41",
+      "license": "CC-BY-4.0",
+      "selection": {
+        "status": "user-selected-visual",
+        "scope": "Publication and visual direction only; not a geometry, alpha, production-gate or delivery approval."
+      },
+      "source": {
+        "retention": "Original retained outside the repository; not required to run this sample.",
+        "sha256": "ee4bc7fe07aa2e2d2cd96e9d1d9c62779d07b191e1e1dd2efe0e05c3f096e753",
+        "bytes": 16679,
+        "dimensions": [
+          256,
+          256
+        ],
+        "mode": "RGBA"
+      },
+      "derivative": {
+        "sha256": "ee4bc7fe07aa2e2d2cd96e9d1d9c62779d07b191e1e1dd2efe0e05c3f096e753",
+        "bytes": 16679,
+        "dimensions": [
+          256,
+          256
+        ],
+        "mode": "RGBA",
+        "alphaExtrema": [
+          0,
+          255
+        ]
+      },
+      "processing": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "operation": "byte-for-byte copy",
+        "parameters": {},
+        "lossy": false,
+        "cropped": false,
+        "chromaKeyApplied": false,
+        "metadataChunksPreserved": [],
+        "metadataChunkSha256": {},
+        "provenanceNote": "Source ancillary chunks are retained verbatim. Embedded source dimensions/signatures describe the source, not a new authenticated derivative. No new generation receipt is asserted."
+      },
+      "qualityReview": {
+        "comparison": "Original RGBA retained without quantization; alpha and pixels unchanged.",
+        "choice": "Exact copy of the approved falcon-folder poet reference."
+      }
+    }
+  ]
+}
