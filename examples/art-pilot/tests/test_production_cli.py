@@ -1,4 +1,4 @@
-"""Offline black-box regression. Decisions and execution receipts are synthetic fixtures."""
+﻿"""Offline black-box regression. Decisions and execution receipts are synthetic fixtures."""
 import hashlib
 import json
 import subprocess
@@ -143,7 +143,7 @@ class ProductionCLI(unittest.TestCase):
         adoption = self.cli("adopt", "--attempt", "v2", "--asset", "bird", "--review", self.event_path(review2),
                             "--result", self.event_path(technical2[0]))
         self.assertEqual(adoption["candidate"]["attemptId"], "v2")
-        projection = json.loads((self.root / "production/current/bird.json").read_text())
+        projection = json.loads((self.root / "production/current/bird.json").read_text(encoding="utf-8"))
         self.assertEqual(projection["status"], "adopted")
         edit = self.complete("edit", self.prepare("edit", "--parent", "v1", "--instruction", "change only wing"))
         self.assertEqual(edit["parent"]["attemptId"], "v1")
@@ -153,7 +153,7 @@ class ProductionCLI(unittest.TestCase):
         tech1 = self.cli("technical", "--attempt", "v1")
         self.cli("adopt", "--attempt", "v1", "--asset", "bird", "--review", self.event_path(review1),
                  "--result", self.event_path(tech1[0]))
-        self.assertEqual(json.loads((self.root / "production/current/bird.json").read_text())["candidate"]["attemptId"], "v1")
+        self.assertEqual(json.loads((self.root / "production/current/bird.json").read_text(encoding="utf-8"))["candidate"]["attemptId"], "v1")
         self.assertEqual((self.root / v1["artifact"]["path"]).read_bytes(), original)
         self.cli("derive", "--attempt", "mirror", "--parent", "v2", "--operation", "copy", ok=False)
         self.cli("prepare", "--attempt", "v1", "--design", "design.json", "--parameters", "params.json",
@@ -165,7 +165,7 @@ class ProductionCLI(unittest.TestCase):
         self.assertEqual(request["prompt"], self.packet["prompt"])
         self.assertEqual([i["artifact"]["sha256"] for i in request["inputs"]], [self.sha("ref-b.png"), self.sha("ref-a.png")])
         self.assertEqual(prepared["identityChecklist"], ["identity"])
-        sidecar = json.loads((self.root / f"production/designs/{request['designPackageSha256']}.authoring.json").read_text())
+        sidecar = json.loads((self.root / f"production/designs/{request['designPackageSha256']}.authoring.json").read_text(encoding="utf-8"))
         for kind in ("contract", "draft"):
             self.assertEqual((self.root / sidecar[kind]["path"]).read_bytes(), (self.root / f"{kind}.json").read_bytes())
             self.assertEqual(self.sha(sidecar[kind]["path"]), sidecar[kind]["sha256"])
@@ -236,7 +236,7 @@ class ProductionCLI(unittest.TestCase):
         self.cli("adopt", "--attempt", "unreviewed", "--asset", "bird", ok=False)
         self.assertFalse((self.root / "production/current/bird.json").exists())
         for path in (PROJECT / "scripts").glob("*.py"):
-            self.assertNotIn("sys.path.insert", path.read_text())
+            self.assertNotIn("sys.path.insert", path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
