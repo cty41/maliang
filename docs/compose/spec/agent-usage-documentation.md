@@ -1,16 +1,16 @@
 ---
 feature: agent-usage-documentation
-status: in-progress
+status: delivered
 updated: 2026-10-12
 branch: docs/agent-usage
-commits:
+commits: 5c5fa08..74e49c1
 ---
 
 # 马良 Agent 使用入口与文档一致性优化
 
 ## Report
 
-**What was built** — 本地实现、验证和独立复审已完成，尚未获准提交或推送，因此保留 `in-progress` 与空 `commits`。实际工作区为 `D:\codes\maliang`，分支 `docs/agent-usage`，基线与当前 HEAD 均为 `5c5fa08`；所有本轮变更仍未提交。
+**What was built** — 本地实现、验证和独立复审已完成，用户已授权提交、创建 PR 并合入 main。实际工作区为 `D:\codes\maliang`，分支 `docs/agent-usage`，基线为 `5c5fa08`，实现提交为 `74e49c1`；记录范围不包含后续文档收口提交。远端检查及合并结果以 PR 为准，不由本地验证代替。
 
 新增精简开发入口 `AGENTS.md`、单个可移植使用 skill 及中英显示元数据、`llms.txt` 导航；同步双语 README、CONTRIBUTING、历史 spec 与 CLI 预览帮助。新增可直接运行的 `offline_demo.py`，通过现有生产流程脚本完成 compile → prepare → 合成结果绑定 → technical → 合成人审 fixture → adopt，并拒绝复用已有输出目录。教程、产物和最终摘要明确区分合成练习、真实 provider 执行和真实人工批准。
 
