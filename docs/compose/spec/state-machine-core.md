@@ -238,10 +238,12 @@ class StateMachine:
    - 空列表 → 同样「not allowed」（fail-closed）。
 7. 依次执行 `transition.step_ids`：
    - `step = registry.get(action)`（action 来自 `policy.steps[step_id].action`）
-   - `detail = step.run(decl.params, context or {})`
-   - detail 必须是 Mapping；否则 `StateTransitionError("step returned invalid result")`
-   - 单步抛错 → 包装为 `StateTransitionError(f"step failed: {step_id}: {exc}")`（保留原因字符串）
-   - 已成功步骤的 `detail` 保留；失败时**整次 apply 失败**，不返回 TransitionResult
+   - `detail = step.run(decl.params, run_context)`；run_context 初始为 context 外层副本。
+   - detail 必须是 Mapping，否则抛错；收集时立即深拷贝，后续共享数据变化不得改变证据快照。
+   - 具体内置 ChromaKeyStep / AlignCanvasStep 成功后，将 output 作为后续 image_path；不凭自定义步骤同名字段推断图像传递。
+   - 配置 image_out 时复用该中间目的文件；未配置时仍可原地处理。此操作不是文件事务。
+   - 单步失败包装为 StateTransitionError，不返回成功 TransitionResult；先前步骤已写入图片不自动回滚。
+   - 返回记录与输入数据脱离，但不阻止调用方主动修改返回的 dict。
 
 成功返回：
 

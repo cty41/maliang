@@ -71,6 +71,54 @@ def qualification(**changes):
     return value
 
 
+def compile_cases(cases, acceptance_case_ids=()):
+    return review.compile_review_policy(
+        {"policyId": "demo-policy", "version": 1}, [rule()], cases,
+        {"project": "demo"}, authority=AUTHORITY, acceptance_case_ids=acceptance_case_ids,
+    )
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_policy_rejects_conflicting_case_artifacts(reverse):
+    cases = [case(), case(artifact={"path": "examples/other.png", "sha256": "c" * 64})]
+    with pytest.raises(review.ReviewValidationError, match="conflicting active case"):
+        compile_cases(cases[::-1] if reverse else cases)
+
+
+def test_policy_deduplicates_identical_cases():
+    assert compile_cases([case(), case()], ["case-one"]) == compiled_policy()
+
+
+def test_policy_case_order_does_not_affect_identity():
+    cases = [case(), case(caseId="case-two")]
+    assert compile_cases(cases) == compile_cases(cases[::-1])
+
+
+@pytest.mark.parametrize("acceptance_ids", [(), ("case-one",)])
+def test_policy_rejects_ambiguous_active_case_versions(acceptance_ids):
+    with pytest.raises(review.ReviewValidationError, match="conflicting active case"):
+        compile_cases([case(), case(version=2)], acceptance_ids)
+
+
+@pytest.mark.parametrize("changes", [
+    {"scope": {"project": "other"}},
+    {"status": "historical-only", "generationInputAllowed": False},
+    {"status": "superseded", "generationInputAllowed": False},
+    {"ruleIds": ["inactive-rule"]},
+])
+def test_policy_filters_inapplicable_cases_before_conflict_detection(changes):
+    excluded = case(version=2, artifact={"path": "examples/other.png", "sha256": "c" * 64}, **changes)
+    assert compile_cases([case(), excluded]) == compile_cases([case()])
+
+
+def test_policy_detects_shadow_case_conflicts_and_explicit_acceptance_selection():
+    shadow = case(status="shadow-only", generationInputAllowed=False)
+    with pytest.raises(review.ReviewValidationError, match="conflicting active case"):
+        compile_cases([case(), shadow])
+    with pytest.raises(review.ReviewValidationError, match="conflicting active case"):
+        compile_cases([case(), case(version=2, ruleIds=["inactive-rule"])], ["case-one"])
+
+
 def test_review_rule_and_case_validate():
     assert review.validate_review_rule(rule())["ruleId"] == "silhouette"
     assert review.validate_review_case(case(), authority=AUTHORITY)["caseId"] == "case-one"

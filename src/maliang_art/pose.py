@@ -65,7 +65,7 @@ def validate_draft(
     if not isinstance(draft, dict) or set(draft) - DRAFT_KEYS:
         raise PoseProofError("draft contains unknown fields or is not an object")
     required = DRAFT_KEYS - {"historicalEvidence"}
-    if draft.get("schemaVersion") != 1 or required - set(draft):
+    if type(draft.get("schemaVersion")) is not int or draft.get("schemaVersion") != 1 or required - set(draft):
         raise PoseProofError("draft is missing required schema v1 fields")
     for key in ("assetId", "characterId", "poseId", "direction"):
         if not isinstance(draft.get(key), str) or not draft[key].strip():
@@ -138,7 +138,7 @@ def validate_card(
         raise PoseProofError("pose proof card must be an object")
     optional = {"historicalEvidence"}
     required = {"schemaVersion", "poseProofId", "assetId", "characterId", "poseId", "direction", "canvas", "visualMoment", "selectedOption", "selection"}
-    if set(card) - required - optional or required - set(card) or card.get("schemaVersion") != 1:
+    if set(card) - required - optional or required - set(card) or type(card.get("schemaVersion")) is not int or card.get("schemaVersion") != 1:
         raise PoseProofError("pose proof card fields are invalid")
     pseudo = {"schemaVersion": 1, "assetId": card["assetId"], "characterId": card["characterId"], "poseId": card["poseId"], "direction": card["direction"], "visualMoment": card["visualMoment"], "canvas": card["canvas"], "options": [card["selectedOption"]]}
     if "historicalEvidence" in card:
@@ -239,11 +239,15 @@ def render_preview(
     option: dict[str, Any], canvas: list[int] | tuple[int, int],
     size: list[int] | tuple[int, int] | None = None,
 ) -> Image.Image:
-    """Render an option at an explicit size or half its declared canvas size."""
+    """Render at an explicit size, or half size fitted within 4,194,304 pixels."""
     canvas_width, canvas_height = _size(canvas, "pose proof canvas", minimum=16)
     if size is None:
         preview_width = max(1, round(canvas_width / 2))
         preview_height = max(1, round(canvas_height / 2))
+        if preview_width * preview_height > _MAX_RENDER_PIXELS:
+            scale = (_MAX_RENDER_PIXELS / (canvas_width * canvas_height)) ** 0.5
+            preview_width = max(1, int(canvas_width * scale))
+            preview_height = max(1, int(canvas_height * scale))
     else:
         preview_width, preview_height = _size(size, "preview size")
     scale = min(preview_width / canvas_width, preview_height / canvas_height)

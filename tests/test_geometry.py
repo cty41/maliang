@@ -277,7 +277,7 @@ def test_fit_uniform_requires_baseline_y():
 def test_fit_uniform_transforms_contact_points_with_same_scale_offset():
     from maliang_art.geometry import fit_uniform as fu
     image, mask = pair(with_tail=False)
-    contacts = [(10, 20)]
+    contacts = [(7, 11)]
     result = fu(
         image,
         mask,
@@ -288,12 +288,12 @@ def test_fit_uniform_transforms_contact_points_with_same_scale_offset():
         contact_points=contacts,
     )
     assert result.source_ground is not None
-    assert result.source_ground.contact_points == ((10, 20),)
+    assert result.source_ground.contact_points == ((7, 11),)
     assert result.target_ground is not None
     assert result.target_ground.contact_points is not None
-    # scale=2.0, offset=(offset_x, offset_y): target = round(src*scale) + offset
+    # Pixel-center mapping resolves exact center ties toward positive infinity.
     tc = result.target_ground.contact_points[0]
-    assert tc == (round(10 * 2.0) + result.offset_x, round(20 * 2.0) + result.offset_y)
+    assert tc == (15 + result.offset_x, 23 + result.offset_y)
 
 
 def test_compare_core_tilted_variant_not_rejected_by_aabb():
@@ -337,6 +337,131 @@ def test_compare_core_tilted_variant_not_rejected_by_aabb():
     base_alpha = measure_alpha_bbox(png_bytes(base_img))
     lean_alpha = measure_alpha_bbox(png_bytes(lean_img))
     assert lean_alpha.bbox.width > base_alpha.bbox.width
+
+
+def test_fractional_audit_contact_is_rejected_not_clamped():
+    image = Image.new("RGBA", (5, 7), BODY)
+    with pytest.raises(GeometryError, match="contact point.*lost by nearest sampling"):
+        fit_uniform(png_bytes(image), canvas=(2, 4), baseline_y=3,
+                    anchor_x=1, scale=0.5, contact_points=[(4, 6)])
+
+
+def test_audit_inconsistent_mask_is_rejected_before_paste(monkeypatch):
+    image, mask = blank(8, 8), blank(8, 8)
+    image.putpixel((2, 4), BODY)
+    for x in range(5):
+        mask.putpixel((x, 4), CORE)
+    image_bytes, mask_bytes = png_bytes(image), png_bytes(mask)
+    def no_paste(*args, **kwargs):
+        pytest.fail("invalid mask reached paste")
+    monkeypatch.setattr(Image.Image, "paste", no_paste)
+    with pytest.raises(GeometryError, match="core mask pixels must overlap"):
+        fit_uniform(image_bytes, mask_bytes, canvas=(3, 3), baseline_y=1,
+                    anchor_x=1, scale=1)
+    with pytest.raises(GeometryError, match="core mask pixels must overlap"):
+        measure_core(image_bytes, mask_bytes)
+
+
+def test_noncore_mask_overflow_is_rejected_before_paste(monkeypatch):
+    image, mask = blank(8, 8), blank(8, 8)
+    image.putpixel((2, 4), BODY)
+    mask.putpixel((2, 4), CORE)
+    mask.putpixel((7, 4), TAIL)
+    image_bytes, mask_bytes = png_bytes(image), png_bytes(mask)
+    def no_paste(*args, **kwargs):
+        pytest.fail("overflowing mask reached paste")
+    monkeypatch.setattr(Image.Image, "paste", no_paste)
+    with pytest.raises(GeometryError, match="overflow: mask"):
+        fit_uniform(image_bytes, mask_bytes, canvas=(3, 3), baseline_y=1,
+                    anchor_x=1, scale=1)
+
+
+@pytest.mark.parametrize("scale,contact", [(0.5, (3, 5)), (1.5, (4, 6)),
+                                           (1.0, (4, 6)), (2.0, (4, 6))])
+def test_non_square_center_sampling_matches_markers_mask_and_record(scale, contact):
+    import math
+    image = Image.new("RGBA", (5, 7), BODY)
+    mask = Image.new("RGBA", (5, 7), CORE)
+    image.putpixel(contact, TAIL)
+    result = fit_uniform(png_bytes(image), png_bytes(mask), canvas=(30, 30),
+                         baseline_y=25, anchor_x=15, scale=scale,
+                         contact_points=[contact])
+    output = Image.open(io.BytesIO(result.image_bytes))
+    output_mask = Image.open(io.BytesIO(result.mask_bytes))
+    tc = result.target_ground.contact_points[0]
+    assert tc == tuple(math.floor((c + 0.5) * scale) + offset
+                       for c, offset in zip(contact, (result.offset_x, result.offset_y)))
+    assert output.getpixel(tc) == TAIL
+    assert output_mask.getpixel(tc) == CORE
+    for y in range(math.ceil(7 * scale)):
+        for x in range(math.ceil(5 * scale)):
+            sx, sy = math.floor((x + 0.5) / scale), math.floor((y + 0.5) / scale)
+            expected = image.getpixel((sx, sy)) if sx < 5 and sy < 7 else (0, 0, 0, 0)
+            expected_mask = CORE if sx < 5 and sy < 7 else (0, 0, 0, 0)
+            target = (x + result.offset_x, y + result.offset_y)
+            assert output.getpixel(target) == expected
+            assert output_mask.getpixel(target) == expected_mask
+    record = result.as_dict()["transform"]
+    assert record["mappingVersion"] == 2
+    assert record["scale"] == scale
+    assert record["sampling"]["sampledSize"] == {"width": math.ceil(5 * scale), "height": math.ceil(7 * scale)}
+    assert record["sampling"]["sourceIndex"] == "floor((targetIndex + 0.5) / scale)"
+
+
+@pytest.mark.parametrize("contact,reason", [((5, 6), "outside the source"),
+                                            ((-1, 0), "outside the source"),
+                                            ((0, 0), "not on an occupied")])
+def test_invalid_source_contacts_rejected(contact, reason):
+    image = blank(5, 7)
+    image.putpixel((3, 5), BODY)
+    with pytest.raises(GeometryError, match=reason):
+        fit_uniform(png_bytes(image), canvas=(10, 10), baseline_y=8,
+                    contact_points=[contact])
+
+
+def test_fractional_sampling_rejects_lost_interior_contact_even_on_opaque_target():
+    image = Image.new("RGBA", (5, 7), BODY)
+    with pytest.raises(GeometryError, match="lost by nearest sampling"):
+        fit_uniform(png_bytes(image), canvas=(10, 10), baseline_y=8,
+                    scale=0.5, contact_points=[(2, 2)])
+
+
+@pytest.mark.parametrize("scale", [0.5, 1, 1.5, 2])
+def test_tail_and_semantic_mask_share_sampling_without_promoting_tail(scale):
+    image, mask = pair(with_tail=True)
+    result = fit_uniform(image, mask, canvas=(64, 64), baseline_y=50,
+                         anchor_x=32, scale=scale)
+    assert result.target_alpha.width > result.target_core.width
+    assert result.target_core.bbox.max_y == 50
+    output = Image.open(io.BytesIO(result.image_bytes))
+    output_mask = Image.open(io.BytesIO(result.mask_bytes))
+    for y in range(64):
+        for x in range(64):
+            if output_mask.getpixel((x, y)) == CORE:
+                assert output.getpixel((x, y)) == BODY
+
+
+@pytest.mark.parametrize("contact", [(True, 1), (1, False), (float("inf"), 1), (1.5, 1)])
+def test_contact_coordinates_require_finite_integer_pixel_labels(contact):
+    image = Image.new("RGBA", (5, 7), BODY)
+    with pytest.raises(GeometryError, match="integer"):
+        fit_uniform(png_bytes(image), baseline_y=20, contact_points=[contact])
+
+
+def test_fractional_non_square_fit_preserves_a_supported_contact_on_small_canvas():
+    image = Image.new("RGBA", (5, 7), BODY)
+    image.putpixel((3, 5), TAIL)
+    result = fit_uniform(png_bytes(image), canvas=(2, 4), baseline_y=3,
+                         anchor_x=1, scale=0.5, contact_points=[(3, 5)])
+    assert result.target_ground.contact_points == ((1, 3),)
+    assert Image.open(io.BytesIO(result.image_bytes)).getpixel((1, 3)) == TAIL
+    assert result.target_core is None
+
+
+def test_fit_explicit_empty_mask_is_not_treated_as_no_mask():
+    image, _ = pair(with_tail=False)
+    with pytest.raises(MissingMaskError):
+        fit_uniform(image, b"", baseline_y=20)
 
 
 # --- compare -----------------------------------------------------------------

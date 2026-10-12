@@ -158,10 +158,12 @@ class FitResult:
     target_alpha: OutlineMeasure
     source_ground: GroundMeasure | None
     target_ground: GroundMeasure | None
+    sampling: dict[str, Any] | None = None
 
     @property
     def transform_record(self) -> dict[str, Any]:
         return {
+            **({"mappingVersion": 2, "sampling": self.sampling} if self.sampling is not None else {}),
             "scale": self.scale,
             "offset": {"x": self.offset_x, "y": self.offset_y},
             "sourceCoreBbox": None if self.source_core is None else self.source_core.bbox.as_dict(),

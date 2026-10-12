@@ -169,6 +169,30 @@ def test_identity_vs_projection_and_pending_attack():
     assert "equal" not in packet.document["identityInvariant"]["shape"]
 
 
+@pytest.mark.parametrize("expected", [[64, 64], [12000, 12000]])
+def test_alpha_audit_rejects_header_before_decode(monkeypatch, expected):
+    class Header:
+        size = (12000, 12000)
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def convert(self, *args):
+            raise AssertionError("must not decode oversized image")
+    monkeypatch.setattr("maliang_art.authoring.compiler.Image.open", lambda *args: Header())
+    assert audit_alpha_bounds(b"header", expected) == {
+        "status": "fail", "size": [12000, 12000], "alphaBounds": None}
+
+
+def test_alpha_audit_invalid_image_fails_clearly():
+    with pytest.raises(OSError):
+        audit_alpha_bounds(b"invalid", [64, 64])
+    png = io.BytesIO()
+    Image.new("RGBA", (64, 64), "red").save(png, format="PNG")
+    with pytest.raises(OSError):
+        audit_alpha_bounds(png.getvalue()[:60], [64, 64])
+
+
 def test_machine_checks_never_prove_subjective_instructions():
     c, d = inputs()
     c["drawingRules"][0]["method"] = "alpha-bounds"

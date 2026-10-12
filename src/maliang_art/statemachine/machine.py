@@ -1,6 +1,7 @@
 """State-machine evaluation and transition application."""
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Mapping
@@ -9,7 +10,7 @@ from ..core import MaLiangError
 from ..ports import Clock
 from .config import PolicyModel, PolicyValidationError, TransitionDecl
 from .records import transition_payload_id
-from .steps import StepRegistry
+from .steps import AlignCanvasStep, ChromaKeyStep, StepRegistry
 
 
 class StateTransitionError(MaLiangError):
@@ -97,9 +98,12 @@ class StateMachine:
                     "stepId": decl.step_id,
                     "action": decl.action,
                     "ok": True,
-                    "detail": dict(detail),
+                    "detail": deepcopy(dict(detail)),
                 }
             )
+            # Only these built-ins define output as the next image input.
+            if type(step) in (ChromaKeyStep, AlignCanvasStep) and "output" in detail:
+                run_context["image_path"] = detail["output"]
         payload_for_id = {
             "assetId": asset_id,
             "fromState": current_state,

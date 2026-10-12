@@ -124,6 +124,7 @@ def measure_core(
 
     Core is never inferred from alpha. A missing mask is an error (or a pending
     status at the caller); it must not be replaced by the full outline bbox.
+    Every selected core pixel must overlap a non-transparent candidate pixel.
     """
     if mask_bytes is None or (isinstance(mask_bytes, (bytes, bytearray, memoryview)) and not mask_bytes):
         raise MissingMaskError("measure_core requires a semantic mask; alpha bbox is not core")
@@ -134,6 +135,8 @@ def measure_core(
     hits = core_pixels(mask, core_color)
     if not hits:
         raise GeometryError("mask contains no core pixels for the requested core_color")
+    if any(image.getpixel((x, y))[3] == 0 for x, y in hits):
+        raise GeometryError("core mask pixels must overlap non-transparent image pixels")
     bbox = core_bbox_of(mask, core_color)
     return CoreMeasure(bbox=bbox, section_widths=_section_widths(hits, bbox))
 
@@ -147,9 +150,9 @@ def _parse_contact_points(contact_points: Sequence[Sequence[int]] | None) -> tup
             x, y = point
             ix = int(x)
             iy = int(y)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise GeometryError(f"contact_points[{index}] must be an (x, y) integer pair") from exc
-        if ix != x or iy != y:
+        if isinstance(x, bool) or isinstance(y, bool) or ix != x or iy != y:
             raise GeometryError(f"contact_points[{index}] must be integers")
         parsed.append((ix, iy))
     return tuple(parsed)

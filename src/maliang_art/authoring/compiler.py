@@ -25,8 +25,10 @@ class ConstructionPacket:
 
 
 def audit_alpha_bounds(image_bytes: bytes, output_size: list[int]) -> dict[str, Any]:
-    """Measure dimensions, nonempty alpha and edge clearance, not art quality."""
+    """Check dimensions before decoding at most 2048² pixels; no art-quality claim."""
     with Image.open(BytesIO(image_bytes)) as source:
+        if list(source.size) != output_size or source.size[0] * source.size[1] > 2048 ** 2:
+            return {"status": "fail", "size": list(source.size), "alphaBounds": None}
         image = source.convert("RGBA")
         bbox = image.getchannel("A").getbbox()
         passed = (list(image.size) == output_size and bbox is not None
