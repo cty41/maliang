@@ -45,6 +45,15 @@ def test_preview_rejects_oversized_allocation_before_pillow(draft, monkeypatch):
         render_preview(draft["options"][0], [8192, 8192], [4096, 1025])
 
 
+@pytest.mark.parametrize("canvas", [[8192, 8192], [8192, 4096], [8192, 256], [256, 256]])
+def test_default_preview_obeys_budget_and_aspect(draft, canvas):
+    preview = render_preview(draft["options"][0], canvas)
+    assert preview.width * preview.height <= 2048 ** 2
+    assert abs(preview.width / preview.height - canvas[0] / canvas[1]) < 0.01
+    if canvas == [256, 256]:
+        assert preview.size == (128, 128)
+
+
 def test_render_is_deterministic(draft):
     first = render_board(draft).tobytes()
     second = render_board(copy.deepcopy(draft)).tobytes()

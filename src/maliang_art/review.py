@@ -264,7 +264,7 @@ def compile_review_policy(
     ordered_rules = sorted(by_id.values(), key=lambda r: (_scope_specificity(r["scope"]), r["ruleId"], r["version"]), reverse=True)
     valid_cases = [validate_review_case(value, authority=authority) for value in cases]
     selected_case_ids = set(_unique_text_list(acceptance_case_ids, "acceptanceCaseIds"))
-    selected_cases = []
+    cases_by_id: dict[str, dict[str, Any]] = {}
     active_rule_ids = {r["ruleId"] for r in ordered_rules}
     for case in valid_cases:
         if case["status"] not in {"active", "shadow-only"}:
@@ -273,7 +273,11 @@ def compile_review_policy(
             continue
         if not active_rule_ids.intersection(case["ruleIds"]) and case["caseId"] not in selected_case_ids:
             continue
-        selected_cases.append(case)
+        old = cases_by_id.get(case["caseId"])
+        if old is not None and canonical_bytes(old) != canonical_bytes(case):
+            raise ReviewValidationError(f"conflicting active case versions or content: {case['caseId']}")
+        cases_by_id[case["caseId"]] = case
+    selected_cases = list(cases_by_id.values())
     missing_cases = selected_case_ids - {c["caseId"] for c in selected_cases}
     if missing_cases:
         raise ReviewValidationError(f"required acceptance cases are missing or inapplicable: {sorted(missing_cases)}")

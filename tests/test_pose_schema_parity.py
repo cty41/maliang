@@ -77,6 +77,24 @@ def test_runtime_rejects_schema_parity_cases(mutator, draft):
         validate_draft(draft)
 
 
+@pytest.mark.parametrize("version", [True, False, 1, 0, 2, "1", None, []])
+@pytest.mark.parametrize("kind", ["draft", "card"])
+def test_schema_version_runtime_parity(draft, version, kind):
+    jsonschema = pytest.importorskip("jsonschema")
+    value = draft if kind == "draft" else select_option(
+        draft, "a", "reviewer", "reason", {"b": "reason"}, "2026-01-02T03:04:05Z")
+    value["schemaVersion"] = version
+    validator = validate_draft if kind == "draft" else validate_card
+    schema = jsonschema.Draft202012Validator(_schema(f"pose-{kind}.schema.json"))
+    expected = type(version) is int and version == 1
+    assert schema.is_valid(value) == expected
+    if expected:
+        validator(value)
+    else:
+        with pytest.raises(PoseProofError):
+            validator(value)
+
+
 def test_standalone_schemas_validate_pose_records_when_jsonschema_is_available(draft):
     jsonschema = pytest.importorskip("jsonschema")
     format_checker = jsonschema.FormatChecker()

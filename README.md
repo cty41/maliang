@@ -34,14 +34,13 @@ maliang-art records validate delivery.json --schema delivery --root . --verify
 maliang-art records validate examples/poet-cast/draft.json --schema pose-draft
 maliang-art records check path/to/record-tree
 maliang-art review validate rule review-rule.json --authority-reviewer art-director
-maliang-art flow show-default-template
-maliang-art flow validate path/to/policy.yaml
-maliang-art flow transitions path/to/policy.yaml --state draft
 ```
 
-Pose canvases are record-defined; previews default to half the canvas dimensions
-or accept `--preview-size WIDTHxHEIGHT`. Board and preview allocations are
-bounded to prevent oversized valid records from exhausting memory.
+Pose canvases are record-defined. In current source, `render_preview` and the CLI
+use half the canvas dimensions by default, reduced proportionally (rounded down)
+when needed to fit the 4,194,304-pixel budget. The complete canvas is fitted, not
+cropped. Explicit `--preview-size WIDTHxHEIGHT` values over that budget are rejected.
+Board and preview allocations are bounded to prevent oversized records exhausting memory.
 `pose select-option` requires an explicit reviewer but never assumes a particular
 person. Every unselected option needs one reason. Existing output bytes are
 immutable: repeating identical work succeeds, while different content at the
@@ -49,10 +48,17 @@ same path fails.
 
 ## Offline design CLI (source checkout)
 
-The new design entry is not part of the v0.1.0 tag above. In a checkout containing
-it, install with `python -m pip install .` and provide the explicit JSON records
-defined by `schemas/v1/art-family-contract.schema.json` and
-`schemas/v1/sprite-slice-draft.schema.json`:
+The `flow` and `design` commands below are current-source features, not part of
+the published v0.1.0 tag above. Install the current source (no new release is implied):
+
+```console
+git clone https://github.com/cty41/maliang.git
+cd maliang
+python -m pip install .
+```
+
+For design, provide the explicit JSON records defined by
+`schemas/v1/art-family-contract.schema.json` and `schemas/v1/sprite-slice-draft.schema.json`:
 
 ```console
 maliang-art design validate --contract family.json --draft slice.json
@@ -136,7 +142,15 @@ from maliang_art.statemachine import load_policy, StateMachine
 Projects supply YAML policy and reviewer values; the library does not hard-code
 project identity, canvas sizes, or approvers.
 
+The policy schema uses the stable identifier `urn:maliang:schema:state-machine-policy:v1`;
+its source is `schemas/v1/state-machine-policy.schema.json`, not a v0.1.0 tag resource.
+
 ## Safety and scope
+
+Art-pilot machine-local locks (`examples/art-pilot/maliang.lock.json`), production
+records (`examples/art-pilot/production/`), and scratch outputs (`work/art-pilot/`)
+are ignored by Git. Ignore rules do not remove already tracked files and do not
+replace a publication/privacy review.
 
 - Paths in records are repository-relative POSIX paths.
 - SHA-256 fields bind bytes; they do not establish authorship or licensing.

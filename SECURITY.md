@@ -27,8 +27,20 @@ rejects lexical traversal, visible symlinks and Windows reparse points, and it
 rechecks path components around I/O. Those portable checks reduce accidental
 and ordinary link redirection, but pathname APIs cannot eliminate check/use
 races against an attacker who can mutate the directory namespace concurrently.
-Existing hard-link aliases are rejected as immutable publication targets; hard
-links used internally for creation are removed before publication returns.
+Existing hard-link aliases are rejected as immutable publication targets,
+including aliases with publication-temporary filenames. When a destination has
+multiple links, a publisher waits up to one second for concurrent creation-link
+cleanup, then rejects it if the link count is still not one. Alias names are
+never treated as proof of ownership, and unknown aliases are never deleted.
+Idempotent publication requires a single-link destination before and after
+reading its bytes; a stalled publisher or abandoned creation link fails closed
+rather than permitting an alias. Hard links used internally for creation are
+removed before publication returns successfully. If temporary cleanup fails,
+publication reports an error even when the target has already been created;
+it does not roll back or delete the published target or unknown aliases. If
+publication was already failing, that original error and its cause are preserved.
+A retained creation alias makes subsequent attempts fail closed after the same
+bounded wait.
 Contained reads still assume that an attacker cannot plant aliases in the trusted
 root. Run against a caller-controlled root with operating-system permissions
 that exclude untrusted writers; use a platform-specific directory-handle

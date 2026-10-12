@@ -8,6 +8,7 @@ import os
 import re
 import stat
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 
@@ -118,26 +119,14 @@ def _assert_plain_path(root: Path, destination: Path, *, include_destination: bo
 
 
 def _assert_no_external_hardlinks(destination: Path) -> None:
-    """Allow only the short-lived sibling temp link used by concurrent publishers."""
-    initial = destination.lstat()
-    if initial.st_nlink == 1:
-        return
-    temporary_aliases = 0
-    prefix = f".{destination.name}."
-    for candidate in destination.parent.iterdir():
-        if candidate == destination:
-            continue
-        try:
-            info = candidate.lstat()
-        except FileNotFoundError:
-            continue
-        if info.st_dev == initial.st_dev and info.st_ino == initial.st_ino:
-            if not (candidate.name.startswith(prefix) and candidate.name.endswith(".tmp")):
-                raise CollisionError(f"immutable destination has hard-link aliases: {destination}")
-            temporary_aliases += 1
-    current = destination.lstat()
-    if current.st_nlink != 1 and current.st_nlink != 1 + temporary_aliases:
-        raise CollisionError(f"immutable destination has external hard-link aliases: {destination}")
+    """Wait briefly for a concurrent publisher to remove its creation link."""
+    deadline = time.monotonic() + 1.0
+    while destination.lstat().st_nlink != 1:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise CollisionError(f"immutable destination has hard-link aliases: {destination}")
+        # Names cannot prove ownership, including in another publisher process.
+        time.sleep(min(0.01, remaining))
 
 
 def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
@@ -157,6 +146,7 @@ def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
     except OSError as exc:
         raise MaLiangError(f"cannot create immutable publication temporary: {destination}") from exc
     temporary = Path(temp_name)
+    publication_complete = False
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
@@ -165,6 +155,7 @@ def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
         _assert_plain_path(root, destination)
         try:
             os.link(temporary, destination)
+            publication_complete = True
             return True
         except FileExistsError:
             try:
@@ -173,20 +164,25 @@ def _publish_immutable(data: bytes, destination: Path, root: Path) -> bool:
                     raise CollisionError(f"immutable destination is a link: {destination}")
                 _assert_no_external_hardlinks(destination)
                 existing = destination.read_bytes()
+                _assert_plain_path(root, destination, include_destination=True)
+                _assert_no_external_hardlinks(destination)
             except CollisionError:
                 raise
             except OSError as exc:
                 raise CollisionError(f"cannot inspect immutable destination: {destination}") from exc
             if existing != data:
                 raise CollisionError(f"immutable publication collision: {destination}")
+            publication_complete = True
             return False
         except OSError as exc:
             raise MaLiangError(f"cannot publish immutable destination: {destination}") from exc
     finally:
         try:
             temporary.unlink(missing_ok=True)
-        except OSError:
-            pass
+        except OSError as exc:
+            # Preserve an in-flight publication error and its original cause.
+            if publication_complete:
+                raise MaLiangError(f"cannot remove immutable publication temporary: {temporary}") from exc
 
 
 def read_contained_bytes(root: str | os.PathLike[str], relative: str | os.PathLike[str]) -> bytes:

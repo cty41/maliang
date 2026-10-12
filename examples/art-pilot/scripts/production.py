@@ -186,6 +186,8 @@ def main(argv=None):
         data = source(root, parent["artifact"]["path"]).read_bytes()
         if args.operation == "flip-x":
             with Image.open(BytesIO(data)) as image:
+                if image.width * image.height > 2048 ** 2:
+                    raise ValueError("mirror image exceeds 4194304 pixel decode budget")
                 output = BytesIO()
                 ImageOps.mirror(image).save(output, format="PNG")
                 data = output.getvalue()

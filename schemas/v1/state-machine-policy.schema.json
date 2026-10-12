@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/cty41/maliang/v0.1.0/schemas/v1/state-machine-policy.schema.json",
+  "$id": "urn:maliang:schema:state-machine-policy:v1",
   "title": "MaLiang state-machine policy v1",
   "description": "Structural companion for maliang_art.statemachine.load_policy. Runtime validation is handwritten and does not require jsonschema.",
   "type": "object",

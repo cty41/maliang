@@ -1,4 +1,4 @@
-﻿"""Offline black-box regression. Decisions and execution receipts are synthetic fixtures."""
+"""Offline black-box regression. Decisions and execution receipts are synthetic fixtures."""
 import hashlib
 import json
 import subprocess
@@ -48,6 +48,30 @@ class ProductionCLI(unittest.TestCase):
         self.write("draft.json", self.draft)
         self.packet = compile_design(self.contract, self.draft).document
         self.write("design.json", self.packet)
+
+    def test_acceptance_wrapper_forwards_project_from_external_directory(self):
+        import shutil
+        project = self.root / "project with spaces"
+        project.mkdir()
+        for name in ("contract.json", "draft.json", "design.json"):
+            shutil.copyfile(self.root / name, project / name)
+        command = [sys.executable, "-I", str(CLI.with_name("extract_acceptance.py")),
+                   "--project", str(project), "--design", "design.json",
+                   "--contract", "contract.json", "--draft", "draft.json"]
+        result = subprocess.run(command, cwd=self.root, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn({"id": "identity", "method": "human"}, json.loads(result.stdout))
+        result = subprocess.run(command + ["--unknown"], cwd=self.root, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_design_trial_default_and_explicit_draft(self):
+        command = [sys.executable, "-I", str(CLI.with_name("design_trial.py")), "--character", "falcon-idle"]
+        for extra in ([], ["--draft", "characters/falcon-idle/draft-example.json"]):
+            result = subprocess.run(command + extra, cwd=self.root, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run(command + ["--draft", "missing.json"], cwd=self.root, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing", result.stderr)
 
     def test_tampered_execution_packet_is_rejected(self):
         import copy
@@ -237,6 +261,56 @@ class ProductionCLI(unittest.TestCase):
         self.assertFalse((self.root / "production/current/bird.json").exists())
         for path in (PROJECT / "scripts").glob("*.py"):
             self.assertNotIn("sys.path.insert", path.read_text(encoding="utf-8"))
+
+
+def test_mirror_rejects_header_before_decode(monkeypatch, tmp_path):
+    import runpy
+    import pytest
+    from PIL import ImageOps
+    module = runpy.run_path(str(CLI))
+    class Store:
+        def __init__(self, root):
+            pass
+        def load_candidate(self, attempt):
+            return {"artifact": {"path": "image.bin"}}
+    class Header:
+        width = height = 12000
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+    (tmp_path / "image.bin").write_bytes(b"header")
+    monkeypatch.setitem(module["main"].__globals__, "ProductionStore", Store)
+    monkeypatch.setattr(Image, "open", lambda *args: Header())
+    def unexpected_decode(*args):
+        raise AssertionError("must reject before mirror decodes")
+    monkeypatch.setattr(ImageOps, "mirror", unexpected_decode)
+    with pytest.raises(ValueError, match="decode budget"):
+        module["main"](["--project", str(tmp_path), "derive", "--attempt", "child",
+                        "--parent", "parent", "--operation", "flip-x"])
+
+
+def test_private_runtime_paths_ignored_without_hiding_public_assets(tmp_path):
+    repo = PROJECT.parents[1]
+    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
+    (tmp_path / ".gitignore").write_bytes((repo / ".gitignore").read_bytes())
+    private = ["examples/art-pilot/maliang.lock.json", "examples/art-pilot/production/event.json", "work/art-pilot/preview.png"]
+    public = ["examples/art-pilot/characters/falcon-idle/draft-example.json", "examples/poet-cast/assets.json",
+              "examples/poet-cast/images/example.png", "schemas/v1/state-machine-policy.schema.json"]
+    result = subprocess.run(["git", "check-ignore", "--no-index", *private, *public], cwd=tmp_path,
+                            capture_output=True, text=True)
+    assert result.returncode == 0
+    assert result.stdout.splitlines() == private
+
+
+def test_source_features_are_distinct_from_release_docs():
+    repo = PROJECT.parents[1]
+    schema = json.loads((repo / "schemas/v1/state-machine-policy.schema.json").read_text(encoding="utf-8"))
+    assert schema["$id"] == "urn:maliang:schema:state-machine-policy:v1"
+    for name in ("README.md", "README.zh-CN.md"):
+        text = (repo / name).read_text(encoding="utf-8")
+        assert text.index("python -m pip install .") < text.index("maliang-art flow")
+        assert "git clone https://github.com/cty41/maliang.git" in text
 
 
 if __name__ == "__main__":

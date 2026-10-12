@@ -9,17 +9,19 @@ from maliang_art.authoring import validate_design
 from maliang_art.core import contained_path
 
 PILOT = Path(__file__).resolve().parents[1]
-CHARACTERS = PILOT / "characters"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Dry-run design validation and list missing decisions")
     parser.add_argument("--character", required=True)
+    parser.add_argument("--project", default=str(PILOT))
+    parser.add_argument("--draft", help="project-relative draft JSON; defaults to the character's draft-example.json")
     args = parser.parse_args()
 
-    root = contained_path(CHARACTERS, args.character)
+    project = Path(args.project).resolve()
+    root = contained_path(project / "characters", args.character)
     contract_path = root / "family-contract.json"
-    draft_path = root / "draft-partial.json"
+    draft_path = contained_path(project, args.draft) if args.draft else root / "draft-example.json"
     if not contract_path.is_file():
         raise SystemExit(f"missing {contract_path}")
     if not draft_path.is_file():
