@@ -11,6 +11,22 @@ identities, collision-safe immutable publication, path containment, synthetic
 pose-proof rendering, artifact bindings, review-policy validation, and neutral
 invocation/delivery/failure envelopes.
 
+## Start here
+
+- **Use MaLiang:** [art-pilot sample](examples/art-pilot/README.md) and its
+  [runbook](examples/art-pilot/docs/runbook.md) cover offline practice, request
+  preparation, external execution, and exact-candidate review/adoption.
+- **Use it with an Agent:** [maliang-art skill](skills/maliang-art/SKILL.md)
+  provides the asset-making workflow; [llms.txt](llms.txt) is a document map.
+  Loading or installing a skill depends on the host; these links do not grant
+  image-tool access or automatically install anything.
+- **Develop MaLiang:** [CONTRIBUTING.md](CONTRIBUTING.md),
+  [AGENTS.md](AGENTS.md), and [SECURITY.md](SECURITY.md).
+
+These repository-relative guides and the skill require a source checkout;
+wheel installation does not include them, and the sdist omits the skill and
+runbook. Design specs record decisions and pending work, not executable APIs.
+
 ## Install
 
 ```console
@@ -54,10 +70,24 @@ the published v0.1.0 tag above. Install the current source (no new release is im
 ```console
 git clone https://github.com/cty41/maliang.git
 cd maliang
-python -m pip install .
+python -m venv .venv
 ```
 
-For design, provide the explicit JSON records defined by
+Activate `.venv` with `.venv\Scripts\Activate.ps1` (PowerShell) or
+`source .venv/bin/activate` (Unix), then run from the repository root:
+
+```console
+python -m pip install .
+python -m maliang_art design validate --contract examples/art-pilot/characters/falcon-idle/family-contract.json --draft examples/art-pilot/characters/falcon-idle/draft-example.json
+python -m maliang_art design compile --contract examples/art-pilot/characters/falcon-idle/family-contract.json --draft examples/art-pilot/characters/falcon-idle/draft-example.json --output-dir work/art-pilot/readme-design
+```
+
+Both sample commands exit 0 on success; compile prints a manifest with
+`"packet": "design.json"` and `"guides": []`. The output is an execution brief
+under ignored `work/art-pilot/`, not a generated or approved character image.
+Use a new output directory when changing the inputs.
+
+For your own design, provide the explicit JSON records defined by
 `schemas/v1/art-family-contract.schema.json` and `schemas/v1/sprite-slice-draft.schema.json`:
 
 ```console
@@ -104,9 +134,25 @@ layouts, not future candidate images. Reference paths/hashes and borrowing roles
 are declarations only: this command neither reads/verifies nor copies reference
 images. Empty references support from-scratch exploration. Backend parameters and
 image-input submission remain unverified until bound by an execution adapter.
-There is no network/backend invocation, automatic human approval, candidate
-adoption, or production CLI; generation and exact-image human decisions remain
-separate project steps.
+The design command performs no network/backend invocation, human approval, or
+candidate adoption. The installed `maliang-art` / `python -m maliang_art` CLI has
+no `production` subcommand. The repository sample instead provides
+`python -I examples/art-pilot/scripts/production.py --help` for prepare,
+complete/fail, import, derive, technical review, human review, and adoption.
+Its global `--project` precedes the subcommand; input paths are relative to that
+project root. With the source installed, run the complete synthetic offline
+exercise from the repository root:
+
+```console
+python -I examples/art-pilot/scripts/offline_demo.py --project work/art-pilot/synthetic-demo-001
+```
+
+This creates a separate ignored project and prints `synthetic-adopted`, never
+real provider execution or human approval. Existing output directories are
+refused; choose a new suffix for another run. The [runbook](examples/art-pilot/docs/runbook.md)
+explains artifacts and separates this practice loop from real-project templates.
+Actual generation/editing remains an external host step: no automatic Codex
+provider bridge is delivered, and synthetic human fixtures are not real approval.
 
 ## Python API
 

@@ -2,12 +2,20 @@
 feature: art-pilot-merge-readiness
 status: in-progress
 branch: feat/state-machine-core
-commits:
+commits: 0283eb9..458c667
 ---
 
 # art-pilot 示例迁移与 main 合并前收口
 
 ## Report
+
+**当前状态** — 实现已提交并合并，而非等待首次提交：5233711 整理许可、精选图、可移植 sample 与 CI 配置，458c667 修复 Windows UTF-8 测试读取；main 的 62cceff（PR #1，父提交 00d772f / 458c667）已纳入。后续审查修复经 5c5fa08（PR #2）纳入。保留 in-progress 仅表示下述未闭合证据项，不表示代码未合并。
+
+**可复核证据** — `examples/art-pilot/assets.json`、`ATTRIBUTION.md`、`tests/test_art_pilot_assets.py` 记录三张精选图与派生字节核验；`tests/test_art_pilot_packaging.py` 和 `.github/workflows/ci.yml` 记录发行边界与 sample 测试配置。最终鸟图采用 RGB/LANCZOS 缩放，不是下文规划阶段提议的 64 色量化；图片选择不等于生产采用批准。
+
+**仍缺证据** — 本轮未联网查询远端 job，Git 合并事实不能证明全部必需 CI 曾成功；T5/T6 的完整远端验收保持未确认。资产测试核验仓库派生字节与 source hash 格式，但外部原件不随仓分发，不能由此重新计算/证明鸟图源哈希或完整生成链。provider 桥、几何与视觉人审仍不在本合并完成声明内。
+
+以下 S1–S3 为历史规划基线和约束，不是当前缺陷清单；任务勾选限于上述可复核交付范围。
 
 ## [S1] 问题与基线
 
@@ -74,9 +82,9 @@ V03不实回执移出可执行sample，保留本机证据和明确更正说明�
 
 ## Tasks
 
-- [ ] T1：资产/许可决策清单 — 验收：用户确认实际最终游隼、精选集、图片许可证；列出排除记录与本机留存位置。(covers: S1, S2.1)
-- [ ] T2：整理压缩派生与来源清单 — 验收：所有保留PNG可解码、尺寸/alpha核对、hash匹配；无隐蔽原图bin与重复大图混入；不伪造原生成链。(covers: S2.1, S2.2; depends: T1)
-- [ ] T3：修复sample运行与测试可移植性 — 验收：迁移后的sampleE2E与临时安装测试通过；新checkout不依赖作者D盘/venv，生产完整门禁回归保留。(covers: S2.3; depends: T1)
-- [ ] T4：许可证、文档与发行边界 — 验收：reuse lint零缺失；sample署名/许可明确；真实素材不进入wheel/sdist；从sdist安装烟测通过，旧回执不再冒称真实执行。(covers: S2.3, S2.4, S3; depends: T2, T3)
+- [x] T1：资产/许可决策清单（5233711 的 assets.json / ATTRIBUTION.md 记录精选集及许可；未重新授权） — 验收：用户确认实际最终游隼、精选集、图片许可证；列出排除记录与本机留存位置。(covers: S1, S2.1)
+- [ ] T2：整理压缩派生与来源清单（仓库派生与清单已交付；外部原件 source hash 重算仍缺证据） — 验收：所有保留PNG可解码、尺寸/alpha核对、hash匹配；无隐蔽原图bin与重复大图混入；不伪造原生成链。(covers: S2.1, S2.2; depends: T1)
+- [x] T3：修复sample运行与测试可移植性（5233711、458c667；后续入口修复641d34a） — 验收：迁移后的sampleE2E与临时安装测试通过；新checkout不依赖作者D盘/venv，生产完整门禁回归保留。(covers: S2.3; depends: T1)
+- [x] T4：许可证、文档与发行边界（5233711；后续完整本地验证见 repository-audit-fixes 的历史 Report，非本轮重跑） — 验收：reuse lint零缺失；sample署名/许可明确；真实素材不进入wheel/sdist；从sdist安装烟测通过，旧回执不再冒称真实执行。(covers: S2.3, S2.4, S3; depends: T2, T3)
 - [ ] T5：CI覆盖与完整独立审查 — 验收：本地全部命令新鲜通过，CI配置纳入sample检查，review无关键问题；未完成provider和美术验收仍显式未完成。(covers: S2.5, S3; depends: T4)
-- [ ] T6：经授权提交推送并观察最新HEAD CI — 验收：工作树/提交范围可核对，全部必需远端job成功；报告PR/合并建议，不自动合并。(covers: S2.5; depends: T5)
+- [ ] T6：经授权提交推送并观察最新HEAD CI（已提交并由62cceff合并；全部必需远端job结果本轮未核验） — 验收：工作树/提交范围可核对，全部必需远端job成功；报告PR/合并建议，不自动合并。(covers: S2.5; depends: T5)

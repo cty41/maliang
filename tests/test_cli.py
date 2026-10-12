@@ -2,10 +2,33 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from PIL import Image
 
 from maliang_art.cli import main
 from maliang_art.workflow import validate_failure, validate_invocation
+
+
+@pytest.mark.parametrize("command", ["render-options", "select-option"])
+def test_pose_preview_help(command, capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["pose", command, "--help"])
+    assert exc.value.code == 0
+    help_text = " ".join(capsys.readouterr().out.split())
+    assert "--preview-size WIDTHxHEIGHT" in help_text
+    assert "default: half the canvas dimensions" in help_text
+    assert "reduced proportionally" in help_text
+    assert "rounded down" in help_text
+    assert "4,194,304-pixel budget" in help_text
+    assert "explicit sizes over the budget are rejected" in help_text
+
+
+def test_package_help_lists_commands(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["--help"])
+    assert exc.value.code == 0
+    assert "{pose,design,records,review,flow}" in capsys.readouterr().out
 
 
 def test_pose_render_and_select_cli(tmp_path, draft, capsys):

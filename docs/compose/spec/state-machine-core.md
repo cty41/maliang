@@ -10,7 +10,9 @@ commits: 00d772ffe57c610c3217b8294d6b2794df175ca2..2e845ab
 
 ## Report
 
-**What was built** — MaLiang 新增 `maliang_art.statemachine`：YAML 策略加载与校验、可插拔步骤注册表（内置 `chroma-key` / `align-canvas`）、内存态状态机 `StateMachine.apply`（返回不可变形状的转换记录，不落盘）、默认策略模板 `draft → review → done/rejected`（`approvers: []`），以及 CLI `flow validate|show-default-template|transitions`。项目身份、画布尺寸与审批人值均不进库。
+**What was built** — MaLiang 新增 `maliang_art.statemachine`：YAML 策略加载与校验、可插拔步骤注册表（内置 `chroma-key` / `align-canvas`）、内存态状态机 `StateMachine.apply`（返回带稳定 ID 的转换记录，但不发布该记录；返回 dict 仍可被调用方修改）、默认策略模板 `draft → review → done/rejected`（`approvers: []`），以及 CLI `flow validate|show-default-template|transitions`。项目身份、画布尺寸与审批人值均不进库。
+
+**当前状态** — 实现提交 2e845ab 随 feat/state-machine-core 经 main 的 62cceff（PR #1）合并；后续 641d34a 经 5c5fa08（PR #2）修复内置图像步骤串联与逐步深快照。`apply` 不发布转换 JSON，但内置步骤可写入/覆盖显式图片路径；步骤失败不回滚之前的图片写入。下述验证是原交付时记录，本轮未重新执行构建或远端 CI。
 
 **Verification** — `pytest tests/ -q`：200 passed，3 skipped（Windows symlink）。`python -m build --wheel` 成功，wheel 含 `maliang_art/statemachine/templates/default-policy.yaml` 与 schemas。CLI 三条命令手工冒烟通过。独立 reviewer 两轮：首轮 8 项 critical 全部修复后，复审确认 FIXED 且无新 critical。
 
@@ -199,7 +201,7 @@ class StepRegistry:
 - 输出路径规则同 chroma-key。
 - 返回 `{"size": [w, h], "output": str}`。
 
-步骤**不**调用马良不可变发布（与 spec 一致：apply 不落盘）。
+步骤**不**调用马良不可变发布，但会按上述路径规则写入图片，可能覆盖输入或中间输出。`apply` 不落盘仅指不发布返回的转换记录，不代表无文件副作用；没有跨步骤事务回滚。
 
 ### 2.6 状态机（machine.py）
 
@@ -404,7 +406,7 @@ README.md / README.zh-CN.md 各增加一小节「State machine core」/「状态
 
 - [x] T1: 实现 `config.py` + `PolicyModel` + `schemas/v1/state-machine-policy.schema.json` — 验收：§2.4 全表可测；模板可 `load_policy`；非法规则错误信息含指定关键字。 (covers: §2.3–2.4)
 - [x] T2: 实现 `steps.py`（Protocol、Registry、两个内置步骤）— 验收：§2.5 行为与返回值形状。 (covers: §2.5)
-- [x] T3: 实现 `machine.py` + `records.transition_payload_id` — 验收：§2.6 校验顺序、`TransitionResult`、stable id；不落盘。 (covers: §2.6–2.7; depends: T1, T2)
+- [x] T3: 实现 `machine.py` + `records.transition_payload_id` — 验收：§2.6 校验顺序、`TransitionResult`、stable id；不发布转换记录（内置步骤仍可写图片，无事务回滚）。 (covers: §2.6–2.7; depends: T1, T2)
 - [x] T4: 默认模板 + `builtin_template_path` / `default_template_text` + 包数据 — 验收：内容与 §2.8 一致；空 approvers 时 apply 拒绝。 (covers: §2.8; depends: T1)
 - [x] T5: CLI 三个 flow 命令 — 验收：§2.9 输出与退出码。 (covers: §2.9; depends: T1, T4)
 - [x] T6: 测试套件 — 验收：§2.11 覆盖；全量 pytest 通过（允许 Windows symlink skip）。 (covers: §2.11; depends: T1–T5)

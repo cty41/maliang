@@ -156,7 +156,8 @@ def build_parser() -> argparse.ArgumentParser:
     render.add_argument("--spec", required=True)
     render.add_argument("--output", required=True)
     render.add_argument("--preview-dir")
-    render.add_argument("--preview-size", type=_parse_dimensions, metavar="WIDTHxHEIGHT")
+    render.add_argument("--preview-size", type=_parse_dimensions, metavar="WIDTHxHEIGHT",
+                        help="default: half the canvas dimensions, reduced proportionally (rounded down) to fit the 4,194,304-pixel budget; explicit sizes over the budget are rejected")
     render.set_defaults(handler=_pose_render)
     select = pose_commands.add_parser("select-option", help="publish a selected pose card")
     select.add_argument("--spec", required=True)
@@ -167,7 +168,8 @@ def build_parser() -> argparse.ArgumentParser:
     select.add_argument("--rejected-reason", action="append", default=[])
     select.add_argument("--selected-at", required=True)
     select.add_argument("--preview-output")
-    select.add_argument("--preview-size", type=_parse_dimensions, metavar="WIDTHxHEIGHT")
+    select.add_argument("--preview-size", type=_parse_dimensions, metavar="WIDTHxHEIGHT",
+                        help="default: half the canvas dimensions, reduced proportionally (rounded down) to fit the 4,194,304-pixel budget; explicit sizes over the budget are rejected")
     select.set_defaults(handler=_pose_select)
 
     design = groups.add_parser("design", help="validate and compile offline visual execution briefs")

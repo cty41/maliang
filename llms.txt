@@ -1,0 +1,31 @@
+# MaLiang
+
+> Provider-neutral Python tools for deterministic game-art preparation, records, and review; not an image-generation service.
+
+Distribution: `maliang-game-art`; import: `maliang_art`; CLI: `maliang-art`.
+Current-source `design` and `flow` features are not in the v0.1.0 tag.
+Links below are source-repository paths; use a checkout, not a wheel, for the skill
+and runbook. This index does not imply automatic agent discovery or skill loading.
+
+## Start here
+
+- [Install and version boundaries](README.md): installation, CLI, and Python API overview.
+- [中文入口](README.zh-CN.md): Chinese installation and usage overview.
+- [Usage skill](skills/maliang-art/SKILL.md): asset preparation and review, explicit project-root setup, and opt-in host installation.
+- [Art-pilot sample](examples/art-pilot/README.md): offline synthetic workflow and distribution limits.
+- [Runbook](examples/art-pilot/docs/runbook.md): authoritative prepare, external execution, exact-result review, and adoption flow.
+
+## Interfaces and safety
+
+- [Package CLI](src/maliang_art/cli.py): actual package commands; use `python -m maliang_art --help`.
+- [Production sample](examples/art-pilot/scripts/production.py): repository script, not a package production subcommand.
+- [Python API exports](src/maliang_art/__init__.py): public entry points.
+- [Record schemas](schemas/v1): versioned JSON contracts.
+- [Development guidance](AGENTS.md): changing MaLiang, not launching generation.
+- [Contributing](CONTRIBUTING.md): developer setup and verification.
+- [Security and limitations](SECURITY.md): trust boundaries; host tools and real human approval remain external.
+
+## Optional design plans — nonfunctional references
+
+- [Image execution providers](docs/compose/spec/image-execution-providers.md): planned bridge, not an implemented API or executable command; manual host trials do not deliver it.
+- [Agent usage documentation](docs/compose/spec/agent-usage-documentation.md): design and delivery evidence, not a runtime entry point.

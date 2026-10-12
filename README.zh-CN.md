@@ -10,6 +10,18 @@ v0.1 提供确定性 JSON 编码与稳定 ID、路径约束、并发安全的不
 素材哈希记录、合成姿态草图渲染、Review 规则验证，以及供应商无关的
 invocation/delivery/failure 记录。它不负责直接调用任何图像生成服务。
 
+## 从这里开始
+
+- **用马良制作资产**：[art-pilot 示例](examples/art-pilot/README.md) 与
+  [运行手册](examples/art-pilot/docs/runbook.md)，包含离线练习、准备请求、外部执行和精确候选审核/采用。
+- **让 Agent 使用马良**：[maliang-art skill](skills/maliang-art/SKILL.md) 提供制作流程，
+  [llms.txt](llms.txt) 提供文档导航。加载/安装方式由宿主决定；链接不会自动安装技能或授予生图权限。
+- **开发马良**：[CONTRIBUTING.md](CONTRIBUTING.md)、[AGENTS.md](AGENTS.md) 和
+  [SECURITY.md](SECURITY.md)。开发规则不是终端用户生图教程。
+
+这些仓库相对链接与 skill 需要源码 checkout；wheel 不携带这些指南，sdist 也不携带
+skill 和运行手册。设计规格记录决策和待办，不是已实现 API 的证明。
+
 ## 安装与使用
 
 ```console
@@ -34,10 +46,23 @@ v0.1.0 tag 中；这不表示已有新发行版。安装当前源码：
 ```console
 git clone https://github.com/cty41/maliang.git
 cd maliang
-python -m pip install .
+python -m venv .venv
 ```
 
-按 `schemas/v1/art-family-contract.schema.json` 与
+PowerShell 用 `.venv\Scripts\Activate.ps1`，Unix 用 `source .venv/bin/activate`
+激活环境；然后从仓库根目录执行以下无网络设计命令（安装依赖可能联网）：
+
+```console
+python -m pip install .
+python -m maliang_art design validate --contract examples/art-pilot/characters/falcon-idle/family-contract.json --draft examples/art-pilot/characters/falcon-idle/draft-example.json
+python -m maliang_art design compile --contract examples/art-pilot/characters/falcon-idle/family-contract.json --draft examples/art-pilot/characters/falcon-idle/draft-example.json --output-dir work/art-pilot/readme-design
+```
+
+上述样例成功退出码均为 0；compile 返回含 `"packet": "design.json"` 和
+`"guides": []` 的清单。产物位于已忽略的 `work/art-pilot/`，是执行简报而非生成图或
+已批准角色；修改输入时使用新的输出目录。
+
+自己的设计按 `schemas/v1/art-family-contract.schema.json` 与
 `schemas/v1/sprite-slice-draft.schema.json` 提供明确的合同和草案 JSON：
 
 ```console
@@ -75,8 +100,20 @@ maliang-art design compile --contract family.json --draft slice.json --output-di
 色板和艺术裁决仍待人工审核；语境板只有布局，不伪造未来成图。
 参考路径、哈希和借用职责仅作声明，本命令不读取/核验或复制参考图；
 空参考允许从零探索。后端参数和参考图是否实际提交，须由执行适配器绑定核验。
-不会调用网络/生图后端、自动作出人工批准或采用候选。目前不提供 production
-CLI；生成执行与绑定精确图像的人工决定是独立项目步骤。
+design 命令不会调用网络/生图后端、自动作出人工批准或采用候选。
+包内 `maliang-art` / `python -m maliang_art` **没有 production 子命令**；仓库示例另提供
+`python -I examples/art-pilot/scripts/production.py --help`，支持 prepare、complete/fail、
+import、derive、technical、review 和 adopt。全局 `--project` 放在子命令之前，输入路径
+相对该项目根目录。安装源码后，从仓库根目录运行完整合成离线练习：
+
+```console
+python -I examples/art-pilot/scripts/offline_demo.py --project work/art-pilot/synthetic-demo-001
+```
+
+它创建单独的 ignored 项目并输出 `synthetic-adopted`，不表示真实执行或人类批准。
+已有目录会被拒绝，再练习须换新后缀。[运行手册](examples/art-pilot/docs/runbook.md)
+解释产物并区分合成练习与真实项目模板。实际生成/编辑仍由外部宿主执行；
+自动 Codex provider 桥尚未交付，合成人审 fixture 也不是实际批准。
 
 当前源码中，姿态 API `render_preview` 和 CLI 默认预览为画布半尺寸；超过
 4,194,304 像素预算时等比缩小并向下取整，保留完整画布、不裁切。
