@@ -2,7 +2,7 @@
 feature: repository-audit-fixes
 status: delivered
 branch: fix/repository-audit-fixes
-commits: 62cceff..641d34a
+commits: 62cceff..d198fb5
 ---
 
 # 全仓审查修复：数据正确性、边界与示例
@@ -11,9 +11,9 @@ commits: 62cceff..641d34a
 
 **What was built** — F01–F13 已完成本地实现、回归验证与独立审查。包含内置图像步骤串联、逐步深快照、硬链接有界核验与清理失败处理、适用Review案例冲突检查、mappingVersion=2像素中心采样与接点保存检查、蒙版兼容性/越界拒绝、大图预算与预览边界、严格版本类型、示例入口与安装文档修正、运行产物Git忽略。
 
-**Verification** — 在现有工作区 .venv 下执行 `python -m pytest tests examples/art-pilot/tests -q`：440 passed、6 skipped（Windows符号链接权限）；`python -m reuse lint`：108/108；`python -m build` 首次因PyPI TLS/超时失败，正常重试后sdist及wheel成功；`smoke_wheel.py` 使用本机离线依赖目录在临时环境安装验证37个资源成功；`git diff --check`通过。新独立review对规格/正确性/一致性未发现P1/P2。尚未运行本次远端跨平台CI，不能用本机skip代替链接安全覆盖。
+**Verification** — 在现有工作区 .venv 下执行 `python -m pytest tests examples/art-pilot/tests -q`：440 passed、6 skipped（Windows符号链接权限）；`python -m reuse lint`：108/108；`python -m build` 首次因PyPI TLS/超时失败，正常重试后sdist及wheel成功；`smoke_wheel.py` 使用本机离线依赖目录在临时环境安装验证37个资源成功；`git diff --check`通过。新独立review对规格/正确性/一致性未发现P1/P2。以上为原交付记录的本地验证，不是本轮重跑结果。本轮仅以本地 Git 核对合并；未联网复查远端跨平台 CI，不能用本机 skip 或 merge commit 代替链接安全覆盖。
 
-**交付状态** — 基线62cceff，修复代码提交641d34a，分支fix/repository-audit-fixes；本地实现、验证与独立审查完成。记录范围不含此文档收口提交；推送及远端CI在收口后执行，其结果不由本地验证替代，尚未合并main。
+**交付状态** — 基线 62cceff，修复代码 641d34a，文档收口 d198fb5；已由 main 合并提交 5c5fa08（PR #2，父提交 62cceff / d198fb5）纳入。原实施分支 fix/repository-audit-fixes 仅作历史定位。以下 F01–F13 是修复前问题及其验收设计，不表示当前仍存在这些缺陷；当前行为以代码和回归测试为准。此合并不代表 provider 桥或视觉验收交付。
 
 **Journey log** —
 - 每个缺陷先用合成输入复现；像素最终结果比仅检查步骤顺序更重要。

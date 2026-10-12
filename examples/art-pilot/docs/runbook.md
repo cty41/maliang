@@ -24,6 +24,40 @@ dry-run 只核对并打印，不创建环境、安装或写锁。实际运行生
 
 sdist 仅包含 art-pilot 脚本、合成测试、README，不包含本手册、真实图片、生产历史、本机锁或 policy。真实资产 hash / 来源审计属于仓库检查；所有行为回归使用临时合成 fixture。
 
+## 0.1 一条命令跑通合成离线闭环
+
+前提：按上节安装当前源码及依赖，使用该环境的 Python；执行练习本身不联网、
+不调用生图服务，也不需要图片、登录或外部凭证。从仓库根目录复制运行：
+
+```text
+python -I examples/art-pilot/scripts/offline_demo.py --project work/art-pilot/synthetic-demo-001
+```
+
+脚本在单独的 Git-ignored 项目目录中准备最小合同/Draft、编译设计、调用现有
+production CLI 的 prepare，再用 Pillow 创建 16×16 合成色块并绑定模拟 receipt，
+执行 technical、synthetic human fixture 和 adopt。它不从测试模块导入 fixture，
+也不读取或修改精选图片。首次成功退出 0，stdout 输出 JSON：`status` 为
+`synthetic-adopted`，`synthetic` 为 true，`realProviderExecution` 和
+`realHumanApproval` 均为 false，`project` 为实际绝对路径。
+
+输出目录包含：
+
+- `contract.json`、`draft.json`、`design.json`、`parameters.json`：可检查的执行输入；无参考图或 debug 导引。
+- `synthetic-image.png`、`synthetic-receipt.json`、`synthetic-human.json`：明确标记的测试素材/回执/人审 fixture。
+- `production/attempts/synthetic-001/`、`production/events/`、`production/technical/`：现有门禁生成的记录。
+- `production/current/synthetic-demo.json`：仅合成项目内的 adopted 投影。
+- `synthetic-demo.json`、`demo-result.json`：合成边界声明和产物路径清单。
+
+**这不是实际生图、艺术通过或人类批准。** `actorType: human` 和 pass 值只为测试
+既有审核协议，reviewer 明确为 `synthetic-fixture-human`，statement 明确无人审图；
+不要把这些 fixture 复制进真实项目或当作真实人的决定。色块不需要满足鸟类美术要求，
+其艺术项的 pass 是模拟数据，不是工具作出的视觉判断。
+
+目标路径必须不存在（即使空目录也拒绝）。重复运行非零退出且不覆盖已有文件；
+要再练习请改为新的 `work/art-pilot/synthetic-demo-002` 等路径。运行中断可能保留
+部分记录；同样用新目录重跑，不删除或覆盖旧证据。下面第 1–4 节是**真实项目的
+操作模板**，仍须真实输入、执行证据和人类决定，不得使用上面的合成批准替代。
+
 ## 1. 准备权威输入
 
 在自己的项目目录准备 `family-contract.json`、`draft.json`、`backend-params.json`，使用已安装库 `python -m maliang_art design compile --help` 查看编译参数，输出全新的 `packet/design.json`。不得把任意文字 prompt 当作 compiled prompt。

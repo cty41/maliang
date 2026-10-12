@@ -2,22 +2,30 @@
 feature: geometry-anchor-and-measure
 status: in-progress
 branch: feat/state-machine-core
-commits:
+commits: 0283eb9, 5233711, 641d34a
 ---
 
 # 马良受控视觉探索、生产记录与检查（修订方案）
 
 ## Report
 
+**当前状态** — authoring / geometry / production / design CLI 及 sample 已由 0283eb9 提交，5233711 完成公开 sample 整理，随 main 的 62cceff（PR #1）合并；641d34a 的几何映射、mask/像素预算、示例入口修复随 5c5fa08（PR #2）合并。不存在“这些模块仍未提交”的当前状态。
+
+**已实现范围** — T1–T4 的代码与合成门禁已有实现：`src/maliang_art/authoring/`、`geometry/`、`production/`、`examples/art-pilot/scripts/production.py` 及其黑盒测试。默认无 debug 导引输入、权威设计包核对、完整 acceptance、精确候选与拒绝旧证据均有回归。精确安装核验以 `scripts/smoke_wheel.py` / `lock_environment.py` 为入口，不以历史本机锁为凭据。
+
+**未完成范围** — 真实视觉探索的完整执行链、源参考实际提交、绑定当前候选的几何/艺术验收仍不能由合成测试或精选图片推出。T5–T7 不因用户展示偏好或 Git 合并而勾选；T8 中自动验证/独立审查的历史证据见 repository-audit-fixes Report，但本规格的整体视觉收口仍未完成。自动 provider 桥仍为 image-execution-providers 计划。本轮不进行真实图像调用，也不重验历史远端 CI。
+
+以下为历史修订设计及验收边界；“待实现”和缺口描述需结合本 Report 的现状阅读。
+
 ## [S1] 问题与已确认原则
 
-本规格在原路径替换旧“只补锚图和 alpha bbox”方案，作为唯一当前方案。它描述待实现行为，不代表已实现。
+本规格在原路径替换旧“只补锚图和 alpha bbox”方案，作为唯一当前方案。它记录当时的目标行为；当前已提交范围和仍待视觉验收范围以上方 Report 为准。
 
 当前马良提供记录、Review、姿态证明和状态机；art-pilot 曾以纯文字生成游隼，缺少实际视觉参考。后续确定性渲染器把所有部件都画为椭圆，DR/UL 只改变中央三角方向标记；得到的是布局占位图，不是游隼设计、有效剪影或等距投影。Schema 校验通过和编译成功不能证明角色设计成立。
 
 本次修订保留记录、版本安全和可证明检查，不再要求通过通用椭圆拼装器先完成角色设计。用户已同意：分清视觉设计与记录/检查，修复试点接线，再拿旧角色实际图片做受控视觉探索。旧 design-1c35be31a10d5b65 仅保留实验历史，不作已批准角色/风格/构图输入。
 
-核实的接线缺口：art-pilot 脚本插入本地源码路径；extract_acceptance 把 alpha-bounds 错降为 human；请求仍手填检查项及任意 prompt；identity.* 与编译包 identity 的命名不一致；旧 run_flow/review_check 尚未统一绑定 ProductionStore 的精确候选。仅改输出后缀不能保证不可覆盖；maliang.lock 的旧提交也不包含未提交新模块。这些问题须在真实生图前关闭。
+历史修订时核实的接线缺口（非当前未修复清单）：art-pilot 脚本插入本地源码路径；extract_acceptance 把 alpha-bounds 错降为 human；请求仍手填检查项及任意 prompt；identity.* 与编译包 identity 的命名不一致；旧 run_flow/review_check 尚未统一绑定 ProductionStore 的精确候选。仅改输出后缀不能保证不可覆盖；maliang.lock 的旧提交也不包含未提交新模块。这些问题须在真实生图前关闭。
 
 用户已确认：
 
@@ -64,7 +72,7 @@ commits:
 
 ## [S3] 确定性执行准备与视觉能力边界
 
-保留 authoring 的校验、规则整理、参考职责和请求准备功能；construction packet 的定位改为 execution/design brief packet，不把名字或 API 的成功返回当作视觉设计证明。既有未提交 API 是否调整由实施时兼容性与实际用法确定，不添加双权威格式。
+保留 authoring 的校验、规则整理、参考职责和请求准备功能；construction packet 的定位改为 execution/design brief packet，不把名字或 API 的成功返回当作视觉设计证明。修订时尚未提交的 API 现已随 0283eb9 入库；后续调整应以版本兼容性与实际用法为依据，不添加双权威格式。
 
 执行包必含：完整可读 prompt、任务 view/state、图像输入顺序/职责/哈希、实际后端参数、继承后的输出/显示尺寸、全部必需自动/人工验收项及出处、语境板布局。相同语义输入生成稳定包；输入图列表的顺序有意义，不能随意排序。
 
@@ -135,9 +143,9 @@ art-pilot 在独立环境安装明确提交/构建产物，不依赖马良源码
 
 不迁移 tactics artwork 状态机；不改 Godot runtime、不上传/推送；不训练 LoRA，不保证模型精确服从导引；不实现 flat-2d、动画帧、图集、组件装配。参考素材使用范围/许可证由项目保存，不由哈希证明权利。当前无可核查业界研究，本规格不以先前业界描述作为验证证据。
 
-### 当前实施证据与后续执行顺序
+### 历史实施证据与当时的后续执行顺序
 
-已实现但未提交的 production/authoring/geometry/CLI 保留，不整体推倒。历史测试结果 316 passed / 5 skipped 仅证明当时的自动测试，不代表当前修订已实施或真实角色有效。先前“E3 集成完成”“E5 修复后复审通过”“工具链全部完成”表述过强：试点仍有源码路径、验收方法错误、旧审批旁路与钉版本问题；几何末次修改没有新的独立复审，所称倾斜用例仅测试翼扩展而非真实倾斜。本轮将复验相关证据，未知或缺失保持 pending。
+以下是修订时记录，不是当前代码状态：当时已实现但未提交的 production/authoring/geometry/CLI 后于 0283eb9 提交。历史测试结果 316 passed / 5 skipped 仅证明当时的自动测试，不代表当前修订已实施或真实角色有效。先前“E3 集成完成”“E5 修复后复审通过”“工具链全部完成”表述过强：试点仍有源码路径、验收方法错误、旧审批旁路与钉版本问题；几何末次修改没有新的独立复审，所称倾斜用例仅测试翼扩展而非真实倾斜。本轮将复验相关证据，未知或缺失保持 pending。
 
 ### 本次修订的执行切片（替代旧 E1–E8 推进顺序）
 
@@ -156,10 +164,10 @@ R5/R6 不用更多通用绘画模块交换掉实际视觉探索。UL/攻击在 D
 
 ## Tasks
 
-- [ ] T1：修正 authoring 与文档语义，debug 导引不自动作输入 — 验收：R1 的无几何坐标视觉需求路径及默认输入清单回归通过。(covers: S1, S2, S3)
-- [ ] T2：试点独立环境与真实构建锁 — 验收：R2 的 -I 安装烟测、wheel SHA 核对和禁源码路径回归通过。(covers: S4, S7, S8)
-- [ ] T3：执行包驱动的请求和验收适配 — 验收：R3 的 alpha-bounds 自动归属、未知方法错误、缺项/哈希/次序校验、identity命名统一回归通过；不能重复人工输入要求。(covers: S2, S3, S4, S6; depends: T1, T2)
-- [ ] T4：替换旧流水线旁路及历史隔离 — 验收：R4 的完整生成/编辑/导入/派生/技术/人工采用 E2E 通过，故障不覆盖旧产物、不伪造旧调用；核心与接点未确认不能假称通过。(covers: S1, S4, S5, S6; depends: T3)
+- [x] T1：修正 authoring 与文档语义，debug 导引不自动作输入 — 验收：R1 的无几何坐标视觉需求路径及默认输入清单回归通过。(covers: S1, S2, S3)
+- [x] T2：试点独立环境与真实构建锁 — 验收：R2 的 -I 安装烟测、wheel SHA 核对和禁源码路径回归通过。(covers: S4, S7, S8)
+- [x] T3：执行包驱动的请求和验收适配 — 验收：R3 的 alpha-bounds 自动归属、未知方法错误、缺项/哈希/次序校验、identity命名统一回归通过；不能重复人工输入要求。(covers: S2, S3, S4, S6; depends: T1, T2)
+- [x] T4：替换旧流水线旁路及历史隔离 — 验收：R4 的完整生成/编辑/导入/派生/技术/人工采用 E2E 通过，故障不覆盖旧产物、不伪造旧调用；核心与接点未确认不能假称通过。(covers: S1, S4, S5, S6; depends: T3)
 - [ ] T5：准备并展示真实视觉参考 — 验收：R5 显示图片与职责表，角色需求不含未认可几何硬约束，用户确认确切参考文件。(covers: S2, S3, S7; depends: T4)
 - [ ] T6：游隼 DR Idle 单次受控探索与展示 — 验收：R6 完整请求先于实际调用，图像参考确实提交，候选/小图/旧图对照与路径可见；不中途自动批准或盲目批量重试。(covers: S3, S4, S7; depends: T5)
 - [ ] T7：按用户判断处理候选 — 验收：R7 图像哈希绑定反馈，艺术和技术结果分开，接受后通过全部门禁可直接采用，否决保留来源；UL/攻击仅在DR认可后继续。(covers: S4, S5, S6, S7; depends: T6)

@@ -1,7 +1,7 @@
 version = 1
 
 [[annotations]]
-path = [".gitattributes", ".github/**", ".gitignore", "*.md", "pyproject.toml", "docs/**", "schemas/**", "src/**", "tests/**"]
+path = [".gitattributes", ".github/**", ".gitignore", "*.md", "llms.txt", "skills/**", "pyproject.toml", "docs/**", "schemas/**", "src/**", "tests/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 MaLiang contributors"
 SPDX-License-Identifier = "MIT"

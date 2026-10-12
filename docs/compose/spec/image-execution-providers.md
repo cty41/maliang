@@ -9,6 +9,8 @@ commits:
 
 ## Report
 
+**状态核对** — 保持 designed。main 的 62cceff 合并记录/设计/示例能力，5c5fa08 合并审查修复；两者都不代表本计划的自动 Codex 执行桥已交付。T1 仅记录历史宿主入口试验，不是当前所有会话能力保证；T2–T7 的桥开发及其验收仍未完成。日常使用入口见 [art-pilot runbook](../../../examples/art-pilot/docs/runbook.md)，不能把本设计文档当作可运行 provider CLI。
+
 ## [S1] 问题与证据边界
 
 本方案衔接 geometry-anchor-and-measure.md，不替换其视觉设计/记录/检查分工。只解决执行工具选择、实际能力、请求与真实调用一致性。
