@@ -22,5 +22,9 @@ before changing filesystem, publication, or record boundaries.
   Each requires appropriate explicit authorization; preserve unrelated changes.
 
 For using MaLiang to prepare and review art instead of developing it, start with
-[the art-pilot sample](examples/art-pilot/README.md) and its
-[runbook](examples/art-pilot/docs/runbook.md).
+[getting started (English)](docs/getting-started.md) / [入门教程（简体中文）](docs/getting-started.zh-CN.md)
+and [the usage reference (English)](docs/usage.md) / [使用参考（简体中文）](docs/usage.zh-CN.md),
+then [art-pilot (English)](examples/art-pilot/README.en.md) /
+[示例（简体中文）](examples/art-pilot/README.md). The authoritative production
+workflow is the paired [runbook (English)](examples/art-pilot/docs/runbook.en.md) /
+[运行手册（简体中文）](examples/art-pilot/docs/runbook.md).

@@ -1,35 +1,41 @@
 # Runbook — 冻结请求与精确候选门禁
 
-所有命令从马良仓库根目录执行，`python` 指当前环境的解释器；不依赖特定盘符、用户名或外部源码。下列生产命令是操作模板，不是声称已完成的真实调用。先准备自己的合法输入，使用全新 attempt 和输出路径；不要修改精选图片或补写历史回执。
+[English](runbook.en.md) | [简体中文](runbook.md)
+
+本手册与英文配对是生产流程的权威文档。所有命令从马良仓库根目录执行，`python` 指当前环境的解释器；不依赖特定盘符、用户名或外部源码。下列生产命令是操作模板，不是声称已完成的真实调用。先准备自己的合法输入，使用全新 attempt 和输出路径；不要修改精选图片或补写历史回执。
 
 ## 0. 环境与可复现范围
 
-```text
+操作说明仅提供 Windows PowerShell 路线，本机使用验证环境为 Windows 11 x64。首次使用先按 [开发环境说明](../../../CONTRIBUTING.md#development-environment) 创建并激活环境。
+
+CI 配置为 GitHub 托管 Windows Server x64（`windows-2025`），不是 Windows 11；本机通过不等于托管 CI 通过，未推送的工作流修改没有新的托管运行结果。此范围不否定历史跨平台 CI 结果。
+
+```powershell
 python -m pip install ".[test]"
 python -m pytest tests examples/art-pilot/tests
 python -m build
 python examples/art-pilot/scripts/smoke_wheel.py --wheel dist/maliang_game_art-0.1.0-py3-none-any.whl
 ```
 
-默认 build 从 sdist 构建 wheel。smoke 使用 `sys.executable` 创建临时环境，按平台选择 `Scripts/python.exe` 或 `bin/python`，安装 wheel 并验证包内全部资源；不读取本机历史 lock、不导入工作树源码。传 `--wheelhouse <已有目录>` 可禁止索引访问。未指定时安装依赖可能联网下载，不涉及上传。
+默认 build 从 sdist 构建 wheel。smoke 使用 `sys.executable` 创建临时环境，在 Windows 选择 `Scripts/python.exe`，安装 wheel 并验证包内全部资源；不读取本机历史 lock、不导入工作树源码。脚本仍保留其他平台选择 `bin/python` 的便携分支；这是实现事实，不是本轮提供或验证的 Unix 操作路线。传 `--wheelhouse <已有目录>` 可禁止索引访问。未指定时安装依赖可能联网下载，不涉及上传。
 
 如需长期的示例专用环境，可先准备依赖 wheelhouse，再运行精确源码/wheel核对工具。以下路径相对仓库根目录，`.wheelhouse` 是自行准备的本机目录：
 
-```text
+```powershell
 python examples/art-pilot/scripts/lock_environment.py --source-repo . --wheel dist/maliang_game_art-0.1.0-py3-none-any.whl --wheelhouse .wheelhouse --dry-run
 python examples/art-pilot/scripts/lock_environment.py --source-repo . --wheel dist/maliang_game_art-0.1.0-py3-none-any.whl --wheelhouse .wheelhouse
 ```
 
 dry-run 只核对并打印，不创建环境、安装或写锁。实际运行生成示例本机 `.venv` 和 `maliang.lock.json`，均不要提交。工具复用已有环境，但仍核对每个安装资源；陈旧 wheel 默认拒绝。`--record-existing-test-install` 只能记录已有测试安装差异，不能认证生产就绪。锁记录观察时的提交/dirty状态与真实字节，不伪造历史构建时刻。
 
-sdist 仅包含 art-pilot 脚本、合成测试、README，不包含本手册、真实图片、生产历史、本机锁或 policy。真实资产 hash / 来源审计属于仓库检查；所有行为回归使用临时合成 fixture。
+sdist 仅包含 art-pilot 脚本、合成测试、中文 README.md，不包含英文 README.en.md、双语运行手册、真实图片、生产历史、本机锁或 policy。真实资产 hash / 来源审计属于仓库检查；所有行为回归使用临时合成 fixture。
 
 ## 0.1 一条命令跑通合成离线闭环
 
 前提：按上节安装当前源码及依赖，使用该环境的 Python；执行练习本身不联网、
 不调用生图服务，也不需要图片、登录或外部凭证。从仓库根目录复制运行：
 
-```text
+```powershell
 python -I examples/art-pilot/scripts/offline_demo.py --project work/art-pilot/synthetic-demo-001
 ```
 
@@ -68,7 +74,7 @@ production CLI 的 prepare，再用 Pillow 创建 16×16 合成色块并绑定�
 
 ## 2. prepare / acceptance
 
-```text
+```powershell
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot acceptance --contract family-contract.json --draft draft.json --design packet/design.json
 ```
@@ -83,7 +89,7 @@ prepare 重新编译合同 / Draft 并核对 prompt、任务、输入顺序/职�
 
 成功回执必须包含：`preparedEventId`（原样）、`invocation`（完整对象，非字符串）、`outcome: "success"`、真实 `artifactSha256`、真实 `executionEvidence`。
 
-```text
+```powershell
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot complete --attempt bird-001 --receipt receipt.json --image output.png
 ```
 
@@ -95,7 +101,7 @@ V03 旧回执不可信：实际未提交图片参考、实际 prompt 与冻结�
 
 ## 4. 技术、人审与采用
 
-```text
+```powershell
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot technical --attempt bird-001
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot review --attempt bird-001 --decision-file human-decision.json
 ```
@@ -106,7 +112,7 @@ technical 解码实际图像，运行每个必需自动谓词并绑定精确候�
 
 采用命令模板（尖括号替换为实际事件路径，不要原样执行）：
 
-```text
+```powershell
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot adopt --attempt bird-001 --asset bird-idle --review production/events/<human-event>.json --result production/events/<automatic-event>.json
 ```
 
