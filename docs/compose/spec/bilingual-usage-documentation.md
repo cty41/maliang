@@ -1,16 +1,16 @@
 ---
 feature: bilingual-usage-documentation
-status: in-progress
+status: delivered
 updated: 2026-10-14
 branch: docs/bilingual-usage
-commits:
+commits: 3b228f9..f570068
 ---
 
 # 简明入门与双语使用文档分层
 
 ## Report
 
-**What was built** — 本地实现、验证及独立复审完成；工作区 `D:\codes\maliang`，分支 `docs/bilingual-usage`，基线与 HEAD 为 `3b228f9`。本轮未获提交/推送授权，变更仍未提交，因此保留 in-progress 和空 commits；不是远端已交付声明。
+**What was built** — 本地实现、验证及独立复审完成；工作区 `D:\codes\maliang`，分支 `docs/bilingual-usage`，基线 `3b228f9`，实现提交 `f570068`。用户已授权推送并合入 main；记录范围不含随后文档收口提交。远端 CI 与合并结果以 PR 为准，不由本地验证替代。
 
 根 README 英文78行、中文72行，按用途、Tactics 起源、Windows 安装、Agent/LLM 接入、使用和示例组织。详细用法迁入双语 usage，示例与生产手册补齐英文配对并保留原中文路径；导航与 skill 引用同步。Agent 接入明确宿主配置模型/登录/图像工具，马良自身没有模型服务或 API key 设置，支持手动读取技能说明并确认解释器和独立资产根目录，不虚构自动 provider 或技能激活。
 
