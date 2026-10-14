@@ -309,7 +309,10 @@ def test_source_features_are_distinct_from_release_docs():
     assert schema["$id"] == "urn:maliang:schema:state-machine-policy:v1"
     for name in ("README.md", "README.zh-CN.md"):
         text = (repo / name).read_text(encoding="utf-8")
-        assert text.index("python -m pip install .") < text.index("maliang-art flow")
+        install = text.index("python -m pip install .")
+        assert text.index("v0.1.0") < install
+        assert text.index("`design`") < install and text.index("`flow`") < install
+        assert install < text.index("python -I examples/art-pilot/scripts/offline_demo.py")
         assert "git clone https://github.com/cty41/maliang.git" in text
 
 

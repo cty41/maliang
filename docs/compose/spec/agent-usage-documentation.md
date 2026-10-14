@@ -1,7 +1,7 @@
 ---
 feature: agent-usage-documentation
 status: delivered
-updated: 2026-10-12
+updated: 2026-10-13
 branch: docs/agent-usage
 commits: 5c5fa08..74e49c1
 ---
@@ -10,7 +10,9 @@ commits: 5c5fa08..74e49c1
 
 ## Report
 
-**What was built** — 本地实现、验证和独立复审已完成，用户已授权提交、创建 PR 并合入 main。实际工作区为 `D:\codes\maliang`，分支 `docs/agent-usage`，基线为 `5c5fa08`，实现提交为 `74e49c1`；记录范围不包含后续文档收口提交。远端检查及合并结果以 PR 为准，不由本地验证代替。
+**What was built** — 实现 `74e49c1` 与文档收口 `868e552` 已随 [PR #3](https://github.com/cty41/maliang/pull/3) 合入 main，合并提交为 `3b228f9`。实施工作区为 `D:\codes\maliang`，历史分支为 `docs/agent-usage`，基线为 `5c5fa08`；frontmatter 记录范围按原交付约定不含文档收口提交。
+
+**后续文档分层** — 根 README 的入门精简、双语详细指南和示例手册配对由 [bilingual-usage-documentation](bilingual-usage-documentation.md) 跟进。下方 S1 的“现状”为实施前基线，不是当前文件缺失清单。
 
 新增精简开发入口 `AGENTS.md`、单个可移植使用 skill 及中英显示元数据、`llms.txt` 导航；同步双语 README、CONTRIBUTING、历史 spec 与 CLI 预览帮助。新增可直接运行的 `offline_demo.py`，通过现有生产流程脚本完成 compile → prepare → 合成结果绑定 → technical → 合成人审 fixture → adopt，并拒绝复用已有输出目录。教程、产物和最终摘要明确区分合成练习、真实 provider 执行和真实人工批准。
 
@@ -26,7 +28,7 @@ commits: 5c5fa08..74e49c1
 - `git diff --check`：PASS。
 - 独立复审：首轮发现的离线教程 P2 已修复；第二轮聚焦复审未发现新的 critical 或 P2 回归。复审为只读静态检查，未重复运行已通过的完整验证。
 - Skill 结构校验：零错误；四项启发式警告涉及不随 skill 打包的仓库脚本，已通过显式 checkout 根契约与路径存在性测试覆盖。
-- 未推送，未运行远程 CI；真实宿主安装、激活与真实图片生成未测试。
+- 2026-10-13 按精确 HEAD `868e552a25b13508545857bff1f840108716a0f0` 查询：push run `38275532952` 与 pull_request run `38275574773` 均 completed/success；PR #3 已合并。该证据不替代更早 PR 的历史 job 核验。真实宿主安装、激活与真实图片生成未测试。
 - 继承工作区要求的 Alfred `doctor -Quick -Json` 已运行：报告无关 `fin-value` 子模块为 dirty；未修改或清理该子模块。这不是 MaLiang 验证失败。
 
 **Journey log**

@@ -9,11 +9,11 @@ and runbook. This index does not imply automatic agent discovery or skill loadin
 
 ## Start here
 
-- [Install and version boundaries](README.md): installation, CLI, and Python API overview.
-- [中文入口](README.zh-CN.md): Chinese installation and usage overview.
+- [Quick start (English)](README.md) / [简明入门（简体中文）](README.zh-CN.md): purpose, origins, Windows installation, Agent setup, and examples.
+- [Usage guide (English)](docs/usage.md) / [使用指南（简体中文）](docs/usage.zh-CN.md): Agent/LLM configuration, versions, CLI, Python API, and behavior boundaries.
 - [Usage skill](skills/maliang-art/SKILL.md): asset preparation and review, explicit project-root setup, and opt-in host installation.
-- [Art-pilot sample](examples/art-pilot/README.md): offline synthetic workflow and distribution limits.
-- [Runbook](examples/art-pilot/docs/runbook.md): authoritative prepare, external execution, exact-result review, and adoption flow.
+- [Art-pilot (English)](examples/art-pilot/README.en.md) / [示例（简体中文）](examples/art-pilot/README.md): synthetic regression and distribution limits.
+- [Runbook (English)](examples/art-pilot/docs/runbook.en.md) / [运行手册（简体中文）](examples/art-pilot/docs/runbook.md): the authoritative bilingual production workflow—prepare, external execution/import, exact-result checks, human review, and adoption.
 
 ## Interfaces and safety
 

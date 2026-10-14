@@ -16,9 +16,10 @@ from this skill, a provider preference, a subscription, or a login.
 
 | Need | Entry point |
 | --- | --- |
-| Installation and version boundary | `README.md` in the configured checkout |
-| Executable workflow and receipt/decision formats | `examples/art-pilot/docs/runbook.md` in that checkout |
-| Offline synthetic demonstration and sample scope | `examples/art-pilot/README.md` in that checkout |
+| Quick start | `README.md` (English) / `README.zh-CN.md` (中文) in the configured checkout |
+| Detailed usage and version choices | `docs/usage.md` (English) / `docs/usage.zh-CN.md` (中文) |
+| Executable workflow and receipt/decision formats | `examples/art-pilot/docs/runbook.en.md` (English) / `examples/art-pilot/docs/runbook.md` (中文) |
+| Offline synthetic demonstration and sample scope | `examples/art-pilot/README.en.md` (English) / `examples/art-pilot/README.md` (中文) |
 | Validate / compile a brief | `python -m maliang_art design validate` / `design compile` |
 | Freeze / bind / review / adopt | `python -I examples/art-pilot/scripts/production.py --project work/art-pilot` plus the runbook subcommand |
 

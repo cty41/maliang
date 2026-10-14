@@ -1,11 +1,13 @@
 """Source-checkout documentation checks, not host skill activation or image trials."""
 from __future__ import annotations
 
+from html import unescape
 import json
 from pathlib import Path
 import re
 import subprocess
 import sys
+import unicodedata
 from urllib.parse import unquote, urlsplit
 
 import pytest
@@ -52,21 +54,147 @@ def test_skill_display_metadata(locale):
     assert all(isinstance(value, str) and value.strip() for value in metadata.values())
 
 
+LANGUAGE_PAIRS = (
+    ("README.md", "README.zh-CN.md"),
+    ("docs/usage.md", "docs/usage.zh-CN.md"),
+    ("examples/art-pilot/README.en.md", "examples/art-pilot/README.md"),
+    ("examples/art-pilot/docs/runbook.en.md", "examples/art-pilot/docs/runbook.md"),
+)
+
+
+def without_code_blocks(source):
+    lines = []
+    fence = None
+    for line in source.splitlines():
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        if fence:
+            if marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
+                fence = None
+            lines.append("")
+        elif marker:
+            fence = marker[1]
+            lines.append("")
+        else:
+            lines.append("" if line.startswith(("    ", "\t")) else line)
+    return "\n".join(lines)
+
+
+def markdown_links(source):
+    source = without_code_blocks(source)
+    source = re.sub(r"(`+).*?\1", "", source)
+    inline = re.findall(r"!?\[[^\]]*\]\(([^\s)]+)(?:\s+[^)]*)?\)", source)
+    references = re.findall(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", source, re.MULTILINE)
+    return [destination.strip("<>") for destination in inline + references]
+
+
+def markdown_anchors(source):
+    anchors = set()
+    previous = ""
+    for line in without_code_blocks(source).splitlines():
+        heading = re.match(r"^ {0,3}#{1,6}(?:\s+(.*)|\s*)$", line)
+        title = re.sub(r"\s+#+\s*$", "", heading[1] or "").strip() if heading else None
+        if title is None and previous.strip() and re.fullmatch(r" {0,3}(?:=+|-+)\s*", line):
+            title = previous.strip()
+        previous = line
+        if title is None:
+            continue
+        title = re.sub(r"!?\[([^\]]*)\]\([^)]*\)", r"\1", title)
+        title = re.sub(
+            r"(`+)(.*?)\1|(?<!\w)(_+)(.+?)\3(?!\w)",
+            lambda match: match[2] if match[1] else match[4], title,
+        )
+        title = unescape(re.sub(r"<[^>]+>", "", title)).lower()
+        slug = "".join(
+            char for char in title
+            if char in "-_" or not unicodedata.category(char).startswith(("P", "S"))
+        ).replace(" ", "-")
+        anchor = slug
+        suffix = 0
+        while anchor in anchors:
+            suffix += 1
+            anchor = f"{slug}-{suffix}"
+        anchors.add(anchor)
+    return anchors
+
+
+def test_markdown_anchors_handle_formatting_code_and_duplicates():
+    source = '''# Hello, `API` & **world**! ###
+## 中文：使用 [指南](usage.md)
+## _Emphasis_ and `_literal_` &amp; <em>HTML</em>
+Setext title
+------------
+## Repeat
+## Repeat
+## Repeat-1
+## Repeat
+```markdown
+# Not a heading
+[not a link](missing.md)
+```
+~~~text
+## Also not a heading
+~~~
+    # Indented code
+`[inline code](missing.md)`
+[local](#repeat-3)
+[guide]: usage.md#中文
+'''
+    assert markdown_anchors(source) == {
+        "hello-api--world", "中文使用-指南", "setext-title",
+        "emphasis-and-_literal_--html",
+        "repeat", "repeat-1", "repeat-1-1", "repeat-2",
+    }
+    assert markdown_links(source) == ["usage.md", "#repeat-3", "usage.md#中文"]
+
+
 @pytest.mark.parametrize("relative", [
-    "AGENTS.md", "llms.txt", "README.md", "README.zh-CN.md",
-    "skills/maliang-art/SKILL.md", "examples/art-pilot/README.md",
-    "examples/art-pilot/docs/runbook.md",
+    "AGENTS.md", "llms.txt", "skills/maliang-art/SKILL.md",
+    *(relative for pair in LANGUAGE_PAIRS for relative in pair),
 ])
 def test_repository_document_links(relative):
     document = ROOT / relative
     assert document.is_file(), relative
-    for destination in re.findall(r"!?\[[^\]]*\]\(([^\s)]+)(?:\s+[^)]*)?\)", text(document)):
-        parsed = urlsplit(destination.strip("<>"))
-        if parsed.scheme or parsed.netloc or not parsed.path:
+    for destination in markdown_links(text(document)):
+        parsed = urlsplit(destination)
+        if parsed.scheme or parsed.netloc:
             continue
-        target = (document.parent / unquote(parsed.path)).resolve()
+        target = (document.parent / unquote(parsed.path)).resolve() if parsed.path else document
         assert target.is_relative_to(ROOT.resolve()), (relative, destination)
         assert target.exists(), (relative, destination)
+        if parsed.fragment and target.suffix == ".md" and not target.is_relative_to(ROOT / "docs/compose/spec"):
+            assert unquote(parsed.fragment) in markdown_anchors(text(target)), (relative, destination)
+
+
+@pytest.mark.parametrize("pair", LANGUAGE_PAIRS)
+def test_language_pairs_link_back_at_the_top(pair):
+    for relative, counterpart in (pair, pair[::-1]):
+        document = ROOT / relative
+        destinations = {
+            (document.parent / unquote(urlsplit(link).path)).resolve()
+            for link in markdown_links("\n".join(text(document).splitlines()[:12]))
+            if not urlsplit(link).scheme and not urlsplit(link).netloc
+        }
+        assert ROOT / counterpart in destinations, (relative, counterpart)
+
+
+@pytest.mark.parametrize("pair", LANGUAGE_PAIRS)
+def test_language_pairs_keep_executable_examples_in_sync(pair):
+    blocks = [
+        re.findall(r"^```[^\n]*\n(.*?)^```\s*$", text(ROOT / relative), re.MULTILINE | re.DOTALL)
+        for relative in pair
+    ]
+    assert blocks[0] == blocks[1], pair
+
+
+@pytest.mark.parametrize("locale", ["en", "zh-CN"])
+def test_root_readmes_are_short_and_route_to_matching_language(locale):
+    readme, usage, sample, runbook = (
+        (pair[0] if locale == "en" else pair[1]) for pair in LANGUAGE_PAIRS
+    )
+    source = text(ROOT / readme)
+    assert len(source.splitlines()) <= 90
+    destinations = {urlsplit(link).path for link in markdown_links(source)}
+    assert {usage, sample, runbook} <= destinations
 
 
 def test_navigation_is_short_and_plans_are_nonfunctional():

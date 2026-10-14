@@ -5,19 +5,22 @@ before changing path containment, immutable publication, or record binding.
 
 ## Development environment
 
-Use Python 3.10 or newer. From the repository root:
+Use Python 3.10 or newer on Windows 11 x64, the local usage-validation
+environment. From the repository root in PowerShell, create and activate a
+virtual environment, then install the current checkout:
 
-```console
+```powershell
 python -m venv .venv
-```
-
-Activate it with `.venv\Scripts\Activate.ps1` on Windows PowerShell or
-`source .venv/bin/activate` on Unix, then install the current checkout:
-
-```console
+.\.venv\Scripts\Activate.ps1
 python -m pip install ".[test]"
 python -m pip install reuse
 ```
+
+CI is configured for GitHub-hosted Windows Server x64 (`windows-2025`), not
+Windows 11, with Python 3.10–3.13 and a licensing job on the same runner.
+Local Windows 11 results do not prove hosted CI success; an unpushed workflow
+change has no new hosted-run result. This scope does not remove portable
+implementation branches or invalidate historical cross-platform CI results.
 
 Installing dependencies may access the configured package index. Reuse an
 already prepared environment for offline work; do not install or build in a
@@ -34,7 +37,7 @@ invent human approval to make a test pass.
 Run focused tests first, then this complete sequence before opening a pull
 request. Plain `python -m pytest` only discovers `tests`, not the sample suite.
 
-```console
+```powershell
 python -m pytest tests examples/art-pilot/tests -q
 python -m reuse lint
 python -m build
@@ -51,7 +54,7 @@ available build dependencies. Report unavailable checks and platform-specific
 skips rather than calling them passes. No separate lint/typecheck configuration
 is currently defined; REUSE checks licensing, not Python typing or style.
 
-See [art-pilot](examples/art-pilot/README.md) for sample and distribution
+See [art-pilot](examples/art-pilot/README.en.md) for sample and distribution
 boundaries. Code is MIT licensed; attributed tutorial and curated example
 images use the licenses declared in `REUSE.toml` and their asset manifests.
 Do not commit, push, publish, or change release tags without explicit approval.
