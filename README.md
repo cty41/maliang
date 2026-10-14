@@ -2,25 +2,39 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-**Turn game-art ideas into clear requests, then track results and reviews.**
+**Turn game-art ideas into precise requests, then track exactly which image was
+checked, reviewed, and adopted.**
 
-MaLiang is a small Python toolkit for preparing character-art briefs, checking
-records, and tracking which exact image was reviewed and adopted. Use it directly
-or ask an Agent to operate it. Your chosen host supplies the LLM and image tools;
-MaLiang itself does not call an image-generation service.
+MaLiang is a small Python toolkit. It does **not** draw: your host (an Agent app
+with an image tool, or your own script) generates images. MaLiang handles the
+paperwork around that step.
 
-## Where it came from
+| MaLiang does | MaLiang does not |
+| --- | --- |
+| Validate your character brief and compile it to `design.json` | Call any image or LLM service, or store API keys |
+| Bind the exact returned image by hash | Decide whether art looks good |
+| Run technical checks and record human review and adoption | Approve anything on a person's behalf |
 
-MaLiang was extracted and generalized from the **Tactics artwork tooling**.
-Other projects can reuse its pose-proof and artwork-review workflow without
-copying the original project's identity and rules. See the [extraction record](EXTRACTED_FROM.md).
+## How it works
 
-## Try it from source
+```mermaid
+flowchart LR
+  Idea[Your idea] --> Brief["Contract + draft"]
+  Brief --> Compile["MaLiang: compile brief"]
+  Compile --> Host["Host: generate image"]
+  Host --> Check["MaLiang: bind and check"]
+  Check --> Review["Person: review"]
+  Review --> Adopt["MaLiang: record adoption"]
+```
 
-Use **Windows PowerShell, Python 3.10+, and Git**. Local usage has been verified
-on **Windows 11 x64**; GitHub CI's `windows-2025` runner is Windows Server x64,
-not Windows 11. Install current source: the released **v0.1.0** tag does not
-include the current `design` and `flow` commands. Clone/install may need the network.
+Terms like contract, draft, candidate, and adoption are explained in
+[concepts](docs/concepts.md).
+
+## Quick start
+
+You need **Windows PowerShell, Python 3.10+, and Git**. Install from current
+source: the released **v0.1.0** tag does not include the `design` and `flow`
+commands used in these guides.
 
 ```powershell
 git clone https://github.com/cty41/maliang.git
@@ -30,49 +44,41 @@ python -m venv .venv
 python -m pip install .
 ```
 
-From the repository root with that environment active, try the offline demo:
+Run the offline demo, which walks the whole lifecycle with stand-in data:
 
 ```powershell
 python -I examples/art-pilot/scripts/offline_demo.py --project work/art-pilot/synthetic-demo-001
 ```
 
-Success exits with code 0 and prints a JSON report containing `synthetic-adopted`.
-The demo creates sample records and a tiny synthetic image under
-`work/art-pilot/synthetic-demo-001`; this is **not real provider execution or human
-approval**. No contract-writing or image service is needed for this exercise.
-**Existing directories are refused**, even empty ones. Choose a new suffix for
-another run; do not point this demo at an existing project.
+It prints JSON with `"status": "synthetic-adopted"` and writes the files under
+`work/art-pilot/synthetic-demo-001`. The [getting started](docs/getting-started.md)
+tutorial explains each file, then has you compile a real sample brief.
 
-## Connect an Agent or LLM
+## Where to go next
 
-Configure the model, login, and any image tools in **your host**, not in MaLiang.
-Ask the Agent to read `skills/maliang-art/SKILL.md` in your actual checkout;
-manual reading does not require automatic skill discovery or installation.
-Give it the absolute checkout path, its installed Python interpreter, and a
-separate asset project root. Follow the [connection steps](docs/usage.md#agent-and-llm-setup)
-to check available tools before making any external request.
+- **Learn the workflow**: [getting started](docs/getting-started.md), then [concepts](docs/concepts.md).
+- **Let an Agent drive it**: [Agent setup](docs/agent-setup.md). Example request: “Read the
+  MaLiang skill in my checkout, help me prepare a falcon idle sprite, and stop before
+  generating images so I can review the request.”
+- **Run a real project**: the [production runbook](examples/art-pilot/docs/runbook.en.md).
+- **Look up a command or API**: the [usage reference](docs/usage.md).
+- **See examples**: [art-pilot](examples/art-pilot/README.en.md) (offline practice and curated
+  falcon images) and [poet-cast](examples/poet-cast/ATTRIBUTION.md) (attributed tutorial).
+- **Contribute**: [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
 
-For example: “Read the MaLiang skill in my checkout. Help me prepare a peregrine
-falcon idle sprite; first confirm my paths and available tools, and stop before
-generating images so I can review the request.” Replace this idea with your own.
+## Limits worth knowing
 
-## Use it for your art
+- The demo's image and human decision are **synthetic**: not real provider execution or approval.
+- The demo **refuses an existing project folder**, even an empty one; use a new suffix per run.
+- Local use is verified on Windows 11 x64; CI runs on Windows Server x64 (`windows-2025`).
+- Guides, the runbook, and the skill need a source checkout; the wheel does not ship them.
+- Showcase images and historical feedback are not proof of current production approval.
 
-Start with your character, views, poses, and constraints. MaLiang validates and
-compiles the brief; an authorized external image tool executes it. Then check the
-exact resulting image and obtain a real human review before adoption.
-The [usage guide](docs/usage.md) covers design commands, CLI/API reference, and safety;
-the [production runbook](examples/art-pilot/docs/runbook.en.md) gives the detailed workflow.
-If your host can only prepare text and records, stop at preparation.
+## Background and license
 
-## Where are the examples?
-
-- [Art-pilot](examples/art-pilot/README.en.md): offline practice and curated real-image
-  examples, including the selected falcon and shared style reference. Showcase
-  images and historical feedback are not proof of current production approval.
-- [Poet-cast](examples/poet-cast/ATTRIBUTION.md): the attributed source-project tutorial.
-- [Document map](llms.txt): additional references. These guides, the runbook, and
-  the skill need a source checkout; they are not included in the wheel.
+MaLiang was extracted and generalized from the **Tactics artwork tooling** so other
+projects can reuse its pose-proof and review workflow ([extraction record](EXTRACTED_FROM.md)).
+More references: [document map](llms.txt), [security](SECURITY.md).
 
 Code/package: [MIT](LICENSE). Poet-cast tutorial: [CC BY 4.0](examples/poet-cast/ATTRIBUTION.md).
 Asset licenses: [REUSE.toml](REUSE.toml).

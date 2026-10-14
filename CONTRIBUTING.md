@@ -3,6 +3,26 @@
 MaLiang welcomes focused issues and pull requests. Read [SECURITY.md](SECURITY.md)
 before changing path containment, immutable publication, or record binding.
 
+## Repository map
+
+New to the code? Read [concepts](docs/concepts.md) first, then this map.
+
+| Path | Contents |
+| --- | --- |
+| `src/maliang_art/core.py` | Deterministic JSON identities and safe immutable publication |
+| `src/maliang_art/records.py`, `workflow.py` | Artifact validation; invocation, delivery, and failure records |
+| `src/maliang_art/authoring/` | `design validate`/`compile`: execution briefs from contract + draft |
+| `src/maliang_art/production/` | Project-local provenance store used by the art-pilot `production.py` script |
+| `src/maliang_art/review.py`, `pose.py`, `geometry/` | Review rules, pose-option drafting, geometry checks |
+| `src/maliang_art/statemachine/` | YAML policy loading and transition evaluation (`flow`) |
+| `src/maliang_art/ports.py`, `adapters.py` | Structural interfaces and their JSON/Pillow implementations |
+| `src/maliang_art/cli.py` | The `maliang-art` command |
+| `schemas/v1/` | Versioned JSON record contracts |
+| `examples/art-pilot/` | Sample project: scripts, curated assets, runbook, and its own tests |
+| `skills/maliang-art/` | Agent usage skill (repository-only) |
+| `tests/` | Synthetic-fixture tests for the package and documentation |
+| `docs/compose/spec/` | Design plans; not proof of delivered behavior |
+
 ## Development environment
 
 Use Python 3.10 or newer on Windows 11 x64, the local usage-validation

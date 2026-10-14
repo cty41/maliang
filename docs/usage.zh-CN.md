@@ -1,9 +1,10 @@
-# 马良使用指南
+# 马良使用参考
 
 [English](usage.md) | [简体中文](usage.zh-CN.md) | [快速入门](../README.zh-CN.md)
 
-马良准备游戏美术制作要求，并留下可核对的记录；实际生图和编辑由外部宿主或项目负责。
-本指南介绍库和 CLI。[art-pilot 示例](../examples/art-pilot/README.md) 及其
+本页是库和 CLI 的参考：版本、命令、输出语义和安全边界。第一次接触请先看
+[入门教程](getting-started.zh-CN.md)和[核心概念](concepts.zh-CN.md)；接入 Agent 见
+[Agent 接入](agent-setup.zh-CN.md)。[art-pilot 示例](../examples/art-pilot/README.md) 及其
 [运行手册](../examples/art-pilot/docs/runbook.md) 负责真实项目流程；
 离线练习不是服务调用或人工批准的证据。
 
@@ -13,7 +14,7 @@
 **`maliang_art`**，命令行为 **`maliang-art`**。PyPI 上已有的 `maliang`
 是无关项目，不是本工具包。Pillow 支持范围为 `>=10.4,<13`。
 
-要使用当前功能和仓库示例，请按[快速入门](../README.zh-CN.md#从源码开始体验)
+要使用当前功能和仓库示例，请按[快速入门](../README.zh-CN.md#快速开始)
 中的单一源码路线安装。本指南命令均在激活该环境后，从仓库根目录运行。
 安装依赖可能联网；设计编译和演示本身不联网。
 
@@ -38,58 +39,13 @@ python -m pip install "maliang-game-art @ git+https://github.com/cty41/maliang.g
 
 ## Agent 与 LLM 配置
 
-**马良本身没有模型服务或 API key 配置。** 文本模型、生图/编辑工具和登录，
-都在你选择的宿主中配置。不存在需要填写的通用马良模型字段或凭据文件。
-不要把 API key 或订阅 token 复制进马良记录或提示词。
-
-无需安装或自动发现 skill，也可以手动让 Agent 接入：
-
-1. 按快速入门完成 Windows PowerShell 源码安装。本地使用在 Windows 11 x64
-   验证；`windows-2025` CI runner 是 Windows Server x64，不是 Win11 CI 证据。
-2. 把 **MaLiang checkout 的绝对路径**告诉 Agent，让它读取该 checkout 中的
-   `skills/maliang-art/SKILL.md` 和本指南链接的运行手册。确认该目录包含
-   `pyproject.toml`、`src/maliang_art` 和运行手册。不要从 skill 安装位置
-   或 Agent 当前工作目录猜测 checkout。
-3. 明确**已安装当前马良的 Python 解释器**。激活快速入门环境后，在 checkout
-   根目录执行以下命令，打印解释器路径并检查本地接口；不会调用图像服务：
-
-```powershell
-python -c "import sys; print(sys.executable)"
-python -m maliang_art design validate --help
-python -m maliang_art design compile --help
-python -I examples/art-pilot/scripts/production.py --help
-```
-
-4. 让 Agent 使用该解释器，并以 checkout 为工作目录；Shell 激活状态不一定
-   传递到另一个宿主进程。必要时用 PowerShell 的 `&` 调用运算符执行解释器
-   绝对路径。若导入或命令失败，取得许可后修正安装；不要注入源码路径掩盖
-   不兼容的环境。
-5. 另行确认**资产项目根目录**，例如 checkout 中已忽略的 `work/art-pilot/`
-   下的一个新项目。它不是马良源码根目录，即使位于 checkout 内也应区分。
-   在示例子命令之前显式传入 `--project`；示例输入路径相对该资产根目录解析。
-   确认可写位置，使用新输出路径，不覆盖源图。
-6. 让 Agent 检查宿主**实际暴露的工具及参数定义**：能否生图/编辑、按顺序
-   附加真实图片文件或字节、保留提示词和参数、返回产物并显示该产物？
-   模型名、登录、订阅或提示词里的图片路径都不能证明这些能力。
-   缺少所需图片输入/输出能力时，停在准备阶段并报告缺口；不要偷偷把图片
-   编辑改成纯文本操作。
-7. 审核冻结后的请求，单独授权外部执行。真实生图/编辑是宿主操作，不是马良
-   调用；没有自动 Codex provider 桥。只绑定实际结果与真实执行证据。
-   对同一个候选执行技术检查、显示图片（或提供路径供人查看），然后等待
-   真实人工决定。Agent 和合成测试记录都不能代替人工批准或绕过采用门禁。
-
-第一次可以这样请求：“读取我 MaLiang checkout 中的 skill，确认 checkout、
-解释器和资产根目录，帮我准备角色简报。核对可用图像工具，生图前先停下来让我审核。”
-请提供真实路径和美术目标，不要假设 Agent 已经知道。
-
-**可选安装 skill：**只有确实需要时，才核对宿主当前的导入/发现机制，
-按该机制接入整个 `skills/maliang-art`（含 locales），另行配置 checkout，
-并在宿主内验证激活。复制目录不等于成功发现；这些说明不会自动安装，
-也不代表已经通过宿主激活测试。
+**马良本身没有模型服务或 API key 配置。** 模型、图像工具和登录都归宿主管理。
+分步检查清单（checkout 路径、解释器、资产根目录、工具核对和审核门禁）见
+[Agent 接入](agent-setup.zh-CN.md)。
 
 ## 离线练习与真实项目
 
-源码安装后，[快速入门](../README.zh-CN.md#从源码开始体验) 使用
+源码安装后，[快速入门](../README.zh-CN.md#快速开始) 使用
 `examples/art-pilot/scripts/offline_demo.py`，在已被 Git 忽略的
 `work/art-pilot/` 下创建新项目。成功时退出码为 0，打印 `synthetic-adopted`。
 已有目录（包括空目录）会被拒绝；再运行时请换新后缀。

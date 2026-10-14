@@ -60,6 +60,11 @@ LANGUAGE_PAIRS = (
     ("examples/art-pilot/README.en.md", "examples/art-pilot/README.md"),
     ("examples/art-pilot/docs/runbook.en.md", "examples/art-pilot/docs/runbook.md"),
 )
+GUIDE_PAIRS = (
+    ("docs/getting-started.md", "docs/getting-started.zh-CN.md"),
+    ("docs/agent-setup.md", "docs/agent-setup.zh-CN.md"),
+    ("docs/concepts.md", "docs/concepts.zh-CN.md"),
+)
 
 
 def without_code_blocks(source):
@@ -148,8 +153,8 @@ Setext title
 
 
 @pytest.mark.parametrize("relative", [
-    "AGENTS.md", "llms.txt", "skills/maliang-art/SKILL.md",
-    *(relative for pair in LANGUAGE_PAIRS for relative in pair),
+    "AGENTS.md", "llms.txt", "skills/maliang-art/SKILL.md", "CONTRIBUTING.md",
+    *(relative for pair in LANGUAGE_PAIRS + GUIDE_PAIRS for relative in pair),
 ])
 def test_repository_document_links(relative):
     document = ROOT / relative
@@ -165,7 +170,7 @@ def test_repository_document_links(relative):
             assert unquote(parsed.fragment) in markdown_anchors(text(target)), (relative, destination)
 
 
-@pytest.mark.parametrize("pair", LANGUAGE_PAIRS)
+@pytest.mark.parametrize("pair", LANGUAGE_PAIRS + GUIDE_PAIRS)
 def test_language_pairs_link_back_at_the_top(pair):
     for relative, counterpart in (pair, pair[::-1]):
         document = ROOT / relative
@@ -177,7 +182,7 @@ def test_language_pairs_link_back_at_the_top(pair):
         assert ROOT / counterpart in destinations, (relative, counterpart)
 
 
-@pytest.mark.parametrize("pair", LANGUAGE_PAIRS)
+@pytest.mark.parametrize("pair", LANGUAGE_PAIRS + GUIDE_PAIRS)
 def test_language_pairs_keep_executable_examples_in_sync(pair):
     blocks = [
         re.findall(r"^```[^\n]*\n(.*?)^```\s*$", text(ROOT / relative), re.MULTILINE | re.DOTALL)
@@ -195,6 +200,8 @@ def test_root_readmes_are_short_and_route_to_matching_language(locale):
     assert len(source.splitlines()) <= 90
     destinations = {urlsplit(link).path for link in markdown_links(source)}
     assert {usage, sample, runbook} <= destinations
+    guides = {(pair[0] if locale == "en" else pair[1]) for pair in GUIDE_PAIRS}
+    assert guides <= destinations
 
 
 def test_navigation_is_short_and_plans_are_nonfunctional():

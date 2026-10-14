@@ -18,6 +18,7 @@ from this skill, a provider preference, a subscription, or a login.
 | --- | --- |
 | Quick start | `README.md` (English) / `README.zh-CN.md` (中文) in the configured checkout |
 | Detailed usage and version choices | `docs/usage.md` (English) / `docs/usage.zh-CN.md` (中文) |
+| Agent setup checklist | `docs/agent-setup.md` (English) / `docs/agent-setup.zh-CN.md` (中文) |
 | Executable workflow and receipt/decision formats | `examples/art-pilot/docs/runbook.en.md` (English) / `examples/art-pilot/docs/runbook.md` (中文) |
 | Offline synthetic demonstration and sample scope | `examples/art-pilot/README.en.md` (English) / `examples/art-pilot/README.md` (中文) |
 | Validate / compile a brief | `python -m maliang_art design validate` / `design compile` |

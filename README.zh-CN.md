@@ -2,24 +2,36 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-**把游戏美术想法整理成清楚的制作要求，再记录结果和审核。**
+**把游戏美术想法整理成精确的制作要求，再追踪具体哪张图片经过检查、审核和采用。**
 
-马良是一个轻量 Python 工具包，用于准备角色美术简报、检查记录，
-并追踪具体哪张图片经过审核和采用。你可以直接使用，也可以让 Agent 操作。
-LLM 和图像工具由你选择的宿主提供；马良本身不调用图像生成服务。
+马良是一个轻量 Python 工具包。它**不画图**：图片由你的宿主生成（带图像工具的
+Agent 应用，或你自己的脚本）。马良负责这一步前后的“文书工作”。
 
-## 它从哪里来
+| 马良负责 | 马良不负责 |
+| --- | --- |
+| 校验角色简报并编译为 `design.json` | 调用任何图像或 LLM 服务，或保存 API key |
+| 通过哈希绑定实际返回的那张图 | 判断美术好不好看 |
+| 执行技术检查，记录人工审核与采用 | 替任何人做批准 |
 
-马良从 **Tactics 的美术工具**中提取并通用化，让其他项目也能复用
-姿态草图和美术审核流程，不必把原项目的身份与规则整套搬过去。
-来源见[提取记录](EXTRACTED_FROM.md)。
+## 工作方式
 
-## 从源码开始体验
+```mermaid
+flowchart LR
+  Idea[Your idea] --> Brief["Contract + draft"]
+  Brief --> Compile["MaLiang: compile brief"]
+  Compile --> Host["Host: generate image"]
+  Host --> Check["MaLiang: bind and check"]
+  Check --> Review["Person: review"]
+  Review --> Adopt["MaLiang: record adoption"]
+```
 
-需要 **Windows PowerShell、Python 3.10+ 和 Git**。本地使用已在
-**Windows 11 x64** 验证；GitHub CI 的 `windows-2025` 是 Windows Server x64，
-不是 Windows 11。请安装当前源码：已发布的 **v0.1.0** tag 不包含当前的
-`design` 和 `flow` 命令。克隆和安装可能需要联网。
+图中依次是：你的想法 → 合同 + 草案 → 马良编译简报 → 宿主生图 → 马良绑定并检查 →
+真人审核 → 马良记录采用。合同、草案、候选、采用等术语见[核心概念](docs/concepts.zh-CN.md)。
+
+## 快速开始
+
+需要 **Windows PowerShell、Python 3.10+ 和 Git**。请安装当前源码：已发布的
+**v0.1.0** tag 不包含这些指南用到的 `design` 和 `flow` 命令。
 
 ```powershell
 git clone https://github.com/cty41/maliang.git
@@ -29,44 +41,39 @@ python -m venv .venv
 python -m pip install .
 ```
 
-保持环境激活，从仓库根目录运行离线演示：
+运行离线演示，它用替身数据走完整个生命周期：
 
 ```powershell
 python -I examples/art-pilot/scripts/offline_demo.py --project work/art-pilot/synthetic-demo-001
 ```
 
-成功时退出码为 0，并打印含 `synthetic-adopted` 的 JSON 报告。
-演示在 `work/art-pilot/synthetic-demo-001` 下创建样例记录和一张很小的合成图；
-这**不是真实的服务调用或人工批准**。这次练习无需自己编写合同，也不需要生图服务。
-**已有目录会被拒绝**，空目录也不例外。再次运行请换一个新后缀，
-不要把演示指向已有项目。
+它会打印含 `"status": "synthetic-adopted"` 的 JSON，并在
+`work/art-pilot/synthetic-demo-001` 下写出文件。[入门教程](docs/getting-started.zh-CN.md)
+逐一解释这些文件，然后带你编译一份真实样例简报。
 
-## 接入 Agent 或 LLM
+## 下一步去哪
 
-模型、登录和图像工具在**你选择的宿主**里配置，不是在马良里配置。
-让 Agent 读取下载的源码目录中的 `skills/maliang-art/SKILL.md`；
-无需先安装技能。告诉它源码目录的完整路径、
-已安装马良的 Python 解释器，以及单独的资产项目根目录。
-按[接入步骤](docs/usage.zh-CN.md#agent-与-llm-配置)核对实际工具，再发起外部请求。
+- **学习流程**：[入门教程](docs/getting-started.zh-CN.md)，然后看[核心概念](docs/concepts.zh-CN.md)。
+- **让 Agent 来操作**：[Agent 接入](docs/agent-setup.zh-CN.md)。请求示例：“先读我源码目录中的
+  马良 skill，帮我准备一张游隼待机角色图，生图前停下来让我审核制作要求。”
+- **做真实项目**：[生产运行手册](examples/art-pilot/docs/runbook.md)。
+- **查命令或 API**：[使用参考](docs/usage.zh-CN.md)。
+- **看例子**：[art-pilot](examples/art-pilot/README.md)（离线练习和整理后的游隼图片）和
+  [poet-cast](examples/poet-cast/ATTRIBUTION.md)（带署名的教程）。
+- **参与开发**：[CONTRIBUTING.md](CONTRIBUTING.md) 和 [AGENTS.md](AGENTS.md)。
 
-例如：“先读我源码目录中的马良 skill，帮我准备一张游隼待机角色图。
-先确认路径和可用工具，停在生图前，让我审核制作要求。”你可以换成自己的角色想法。
+## 需要知道的限制
 
-## 用它制作自己的美术
+- 演示中的图片和人工决定都是**合成数据**，不是真实服务调用或人工批准。
+- 演示**拒绝已存在的项目目录**，空目录也不例外；每次运行请换新后缀。
+- 本地使用在 Windows 11 x64 验证；CI 运行在 Windows Server x64（`windows-2025`）。
+- 指南、运行手册和 skill 需要源码 checkout，wheel 不携带它们。
+- 展示图片和历史反馈不等于当前生产批准证据。
 
-从角色、视图、姿态和限制条件开始。马良校验并编译简报，由获得授权的
-外部图像工具实际执行；随后检查具体产物，并在采用前取得真实人工审核。
-[使用指南](docs/usage.zh-CN.md)介绍设计命令、CLI/API 和安全边界；
-[生产运行手册](examples/art-pilot/docs/runbook.md)给出详细操作流程。
-如果宿主只能准备文本和记录，就停在准备阶段。
+## 来源与许可
 
-## 去哪里看例子
-
-- [art-pilot](examples/art-pilot/README.md)：离线练习和整理后的真实图片示例，
-  包括选定的游隼与共用风格参考。展示图片和历史反馈不等于当前生产批准证据。
-- [poet-cast](examples/poet-cast/ATTRIBUTION.md)：带来源署名的原项目教程。
-- [文档导航](llms.txt)：其他参考。上述指南、运行手册和 skill 需要源码 checkout，
-  wheel 不携带它们。
+马良从 **Tactics 的美术工具**中提取并通用化，让其他项目也能复用姿态草图和审核流程
+（[提取记录](EXTRACTED_FROM.md)）。更多参考：[文档导航](llms.txt)、[安全说明](SECURITY.md)。
 
 代码与发行包：[MIT](LICENSE)。poet-cast 教程：[CC BY 4.0](examples/poet-cast/ATTRIBUTION.md)。
 素材许可：[REUSE.toml](REUSE.toml)。

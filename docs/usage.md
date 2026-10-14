@@ -1,12 +1,13 @@
-# MaLiang usage guide
+# MaLiang usage reference
 
 [English](usage.md) | [简体中文](usage.zh-CN.md) | [Quick start](../README.md)
 
-MaLiang prepares game-art instructions and keeps checkable records; actual image
-generation and editing belong to an external host or project. This guide covers
-the library and CLI. The [art-pilot sample](../examples/art-pilot/README.en.md)
-and its [runbook](../examples/art-pilot/docs/runbook.en.md) own the real-project
-workflow; the offline exercise is not evidence of provider execution or approval.
+This is the reference for the library and CLI: versions, commands, output
+semantics, and safety. New here? Start with [getting started](getting-started.md)
+and [concepts](concepts.md); connect an Agent with [Agent setup](agent-setup.md).
+The [art-pilot sample](../examples/art-pilot/README.en.md) and its
+[runbook](../examples/art-pilot/docs/runbook.en.md) own the real-project workflow;
+the offline exercise is not evidence of provider execution or approval.
 
 ## Installation and versions
 
@@ -15,7 +16,7 @@ is **`maliang_art`**, and the command is **`maliang-art`**. The unrelated PyPI p
 named `maliang` is not this toolkit. Pillow is supported in the `>=10.4,<13` range.
 
 For current features and repository examples, follow the single source-install
-route in the [quick start](../README.md#try-it-from-source). Run this guide's
+route in the [quick start](../README.md#quick-start). Run this guide's
 commands from the repository root with that environment active. Dependency
 installation may access the network; design compilation and the demo do not.
 
@@ -43,68 +44,14 @@ not executable APIs. Use [llms.txt](../llms.txt) for the document map and
 
 ## Agent and LLM setup
 
-**MaLiang has no model-service or API-key configuration.** Configure your text
-model, image generation/editing tools, and login in the host you choose. There is
-no universal MaLiang model field or credentials file to fill in. Do not copy keys
-or subscription tokens into MaLiang records or prompts.
-
-You can connect an Agent manually without installing or auto-discovering a skill:
-
-1. Finish the Windows PowerShell source installation in the quick start. Local
-   usage is verified on Windows 11 x64; the `windows-2025` CI runner is Windows
-   Server x64, not evidence of a Windows 11 CI run.
-2. Give the Agent the **absolute MaLiang checkout path** and ask it to read that
-   checkout's `skills/maliang-art/SKILL.md` and this guide's linked runbook. Confirm
-   `pyproject.toml`, `src/maliang_art`, and the runbook exist there. Do not infer the
-   checkout from the skill's installation location or the Agent's working directory.
-3. Identify the **Python interpreter with current MaLiang installed**. With the
-   quick-start environment active, the following prints its path and checks the
-   interfaces locally, without calling an image service. Run from the checkout:
-
-```powershell
-python -c "import sys; print(sys.executable)"
-python -m maliang_art design validate --help
-python -m maliang_art design compile --help
-python -I examples/art-pilot/scripts/production.py --help
-```
-
-4. Tell the Agent to use that interpreter and checkout as its working directory;
-   shell activation may not carry into another host process. If needed, invoke the
-   absolute interpreter path with PowerShell's `&` call operator. If imports or
-   commands fail, correct the installation with permission; do not inject source
-   paths to disguise an incompatible environment.
-5. Agree a **separate asset project root**, for example a fresh project under the
-   checkout's ignored `work/art-pilot/`. This is not the MaLiang source root, even
-   when nested inside it. Pass it explicitly as `--project` before the sample
-   subcommand; sample input paths resolve relative to this asset root. Confirm
-   writable locations and use new output paths rather than overwriting source art.
-6. Ask the Agent to inspect the host's **actual tools and argument schemas**:
-   can it generate/edit, attach actual image files or bytes in order, preserve
-   prompts/parameters, return an output artifact, and display that artifact?
-   A model name, login, subscription, or image path in text proves none of these.
-   If required image input/output is unavailable, stop at preparation and report
-   the missing capability; do not silently replace an image edit with text-only work.
-7. Review the frozen request and authorize any external execution separately.
-   Actual generation/editing is a host operation, not a MaLiang call; there is no
-   automatic Codex provider bridge. Bind only the actual result and execution
-   evidence. Run technical checks on that exact candidate, display it (or provide
-   its path for human inspection), and wait for a real human decision. Neither
-   an Agent nor a synthetic fixture can supply human approval or bypass adoption.
-
-For a first request, ask: “Read the skill in my MaLiang checkout, confirm the
-checkout/interpreter/asset root, and help prepare my character brief. Check the
-available image tools and stop for my review before any generation.” Supply your
-actual paths and art goals; do not assume the Agent knows them.
-
-**Optional skill installation:** only if you want it, check your host's current
-import/discovery mechanism, then use that mechanism for `skills/maliang-art`
-(including its locales). Configure the checkout separately and verify activation
-in the host. Copying a folder is not proof of discovery; these instructions do not
-auto-install anything or claim a host activation test has passed.
+**MaLiang has no model-service or API-key configuration.** Models, image tools,
+and login belong to your host. The step-by-step checklist (checkout path,
+interpreter, asset root, tool inspection, and review gates) is in
+[Agent setup](agent-setup.md).
 
 ## Offline practice and real projects
 
-After source installation, the [quick start](../README.md#try-it-from-source)
+After source installation, the [quick start](../README.md#quick-start)
 runs `examples/art-pilot/scripts/offline_demo.py` in a new, ignored project under
 `work/art-pilot/`. It exits 0 and prints `synthetic-adopted` on success. Existing
 directories, even empty ones, are refused; choose a new suffix for another run.
