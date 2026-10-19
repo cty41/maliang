@@ -5,7 +5,7 @@ branch: feat/state-machine-core
 commits:
 ---
 
-# 生图执行分离：MiMo Desktop 与 Codex 订阅
+# 生图执行分离：MiMo Desktop、Codex 订阅与 Cursor Desktop
 
 ## Report
 
@@ -15,11 +15,13 @@ commits:
 
 本方案衔接 geometry-anchor-and-measure.md，不替换其视觉设计/记录/检查分工。只解决执行工具选择、实际能力、请求与真实调用一致性。
 
-用户选择仅支持 mimo-desktop、codex-subscription；默认偏好 Codex 中可用的 GPT 订阅生图，不引入 OpenAI API key 按次付费。
+用户可显式选择 mimo-desktop、codex-subscription、cursor-desktop；默认偏好 Codex 中可用的 GPT 订阅生图，不引入 OpenAI API key 按次付费。
 
 本会话已见事实：MiMo image_gen 工具只接文字；image_edit 接 image_url/image_urls。V03 实际使用纯文字 image_gen，prompt 也不等于冻结的完整包；旧回执却写已传参考图，不能视为真实调用证据。V04 实际用 image_edit 传入 V03 与诗人风格图，用户认为适合普通单位/试作，但尚不等于透明、尺寸及全部正式资产门禁通过。
 
 2026-10-09 本机实测：codex-cli 0.161.0，codex login status 返回 Logged in using ChatGPT；由 MiMo 终端调用 codex exec 会话，先生成灰底橙圆，再复用 V04 原文与 V03/诗人双图生成游隼，返回 PNG 均由父 Agent 实际读取。Codex 报告 tools.image_gen__imagegen（经 functions.exec）、referenced_image_paths 双图输入；当前 JSONL 未展开底层工具参数，参数真实性证据标为 host-agent-attested，输出文件存在与可解码单独核验。
+
+2026-10-19 Cursor 会话实测：Agent 调用 Cursor 原生 GenerateImage 一次，仅文字描述「flat gray background with one solid orange circle centered in the frame」、aspect_ratio 1:1、filename cursor-probe-gray-orange.png，无参考图。工具实际写出 Cursor 项目 assets 目录下的 cursor-probe-gray-orange.jpg（扩展名被改为 .jpg）；父 Agent 用 Pillow 解码为 JPEG 1024×1024 RGB，SHA-256 0185b83f2d078733b1bc91d26f96788da2abf17b8b6e3935ee0d430d2af45a0a。参数定义证据来自会话工具描述符，像素与哈希为调用后文件检查；模型与计费 unknown。该图为能力探测，不是 art-pilot 候选，也不进入仓库。
 
 用户认为此次 Codex 游隼效果优于 MiMo V04，作为默认路径偏好的依据，不等于技术门禁或最终角色批准。不能推断所有 Codex 客户端均有该能力，也未核实具体图像模型、Pro 套餐或账单归属；这些字段仍为 unknown。MiMo 原生工具也不冒称 GPT 模型。
 
@@ -31,10 +33,11 @@ commits:
 
 执行配置默认 preferred=codex-subscription，available 由具体会话决定。偏好不代表可用；不可用时返回明确阻塞或输出可移交执行包。不自动降级到 MiMo，不自动切 API 按次付费，不读取/复制/复用另一个客户端的 OAuth token 或 cookie。
 
-用户界面两项明确为：
+用户界面三项明确为：
 
 1. mimo-desktop：当前 MiMo Agent 调用原生 image_gen/image_edit，显式备选。
 2. codex-subscription：在 MiMo Desktop 内通过本机 codex exec 调度已用 ChatGPT 登录的 Codex 图像工具，默认首选；不是要求用户搬到 Codex 会话手动执行，也不是用 MiMo 原生工具指定 GPT。
+3. cursor-desktop：当前 Cursor Agent 会话直接调用其原生 GenerateImage，显式选择；不是 Cursor SDK 子进程，当前也没有 Python 执行桥。
 
 第一版直接实现已实测的本地 CLI 执行桥。MiMo/马良冻结任务、拉起受限 Codex 子进程，Codex 调用其实际暴露的图像工具，父进程接收报告并核验图片。文件执行包用于本地审计与参数传递，不再是必须人工移交的产品主路径。不要求整个项目开发更换 Agent，不扩大为通用远程 Agent 平台。
 
@@ -47,6 +50,8 @@ commits:
 MiMo 映射：text-generate→当前 image_gen；reference-generate/edit→当前 image_edit，真实图片参数必须进入工具调用。其他参数只按当时工具 schema 映射，不虚构 background 等不支持参数。不能传参考的操作在调用前拒绝，不把路径嵌到文字里冒充图像输入。
 
 Codex 映射：调用前核对版本、脱敏登录状态和当前会话工具能力，不读凭证文件。已实测入口 tools.image_gen__imagegen 使用 prompt 与 referenced_image_paths；不假定名称永远不变。尺寸、quality、output_format 的显式选择在本次工具报告中不支持：必需要求则阻断，偏好要求可在用户已接受默认设置后省略并记录，不伪造参数。
+
+Cursor 映射：text-generate→GenerateImage（description、aspect_ratio，已实测）。reference-generate→reference_image_paths：2026-10-19 同会话探测仅传诗人风格图、文字只要求「保持参考角色与构图，背景改纯白」且未描述其外形，输出复现橙色胶囊犬造型与构图（JPEG 1024×1024，SHA-256 6398acba8e102408f4b1ea48a3af86cc3f798476ac4610a3e55f49a44a2e80d3），据此判定参考图实际交付，证据等级 host-observed-output（非工具参数日志）；多图顺序是否被模型区分职责仍只能由人审结果间接判断；无单独编辑工具，身份保留式 edit 为 unknown。aspect_ratio 仅 1:1/4:3/3:4/16:9/9:16；精确像素、透明背景、quality、输出格式不可指定（实测 png 文件名仍得到 JPEG），必需要求则阻断。filename 不含目录，保存位置由宿主决定；父进程仅核验工具回报的那个路径。不读取 Cursor 凭证，不把路径写进 description 冒充传图。
 
 首次游隼探测因子进程读取 JSON 被策略拒绝且零生图调用；随后父 Agent 将已读取原文与图片路径直接随任务传递，图像工具接收路径成功。桥应使用参数数组/标准输入传递完整任务，避免 shell 字符串拼接；不要求子进程先用 shell 读取父项目文件，不放宽 sandbox 或绕过权限。图片访问被拒则明确失败。
 
@@ -78,7 +83,7 @@ V04 保留实际双图编辑事实；作为独立探索记录或诚实导入收�
 
 先小切口：两个执行路径能力定义、统一任务映射与校验、MiMo内本地Codex CLI桥、MiMo原生工具执行记录。既有两次Codex产图是入口验证证据，不替代新桥实现后的回归与一次授权端到端验证。
 
-不引入第三provider、自动网页登录、非公开订阅接口、LoRA、通用远程Agent调度。保留既有ports.GenerationProvider；新增具体实现只用于确有执行能力的桥，无需重写authoring/geometry/state-machine。
+新增宿主须先有本机实测入口证据并显式登记，不按名称或订阅推断能力。不引入自动网页登录、非公开订阅接口、LoRA、通用远程Agent调度。保留既有ports.GenerationProvider；新增具体实现只用于确有执行能力的桥，无需重写authoring/geometry/state-machine。
 
 验证包括离线假后端覆盖缺能力、图像丢失/乱序、prompt变更、输出哈希不符、失败/重试、新attempt。真实宿主烟测与离线测试分开。Codex环境缺失则工具开发可部分完成，但Codex真实路径仍blocked，不宣称两个provider全部交付。
 
@@ -95,6 +100,8 @@ V04 保留实际双图编辑事实；作为独立探索记录或诚实导入收�
 - 机审：输入职责/顺序/哈希、实际输出文件解码与尺寸、attempt隔离及请求一致性；透明与目标输出规格属于后处理门禁，不因原图有键色背景就宣称已通过。
 - 人审：胶囊风格是否成立、是否有区别于游隼的凤头鹰特征、是否无枝叶/写实比例污染；展示原图、128/150预览及游隼/旧角色并排，附完整路径。首次视觉探索不要求用户先提供model sheet，不用椭圆调试图作为必需输入。
 - 判定：美术认可、工具链通过和正式采用分别记录；羽冠/眼/横斑不能辨认或只是游隼改色时记录具体否决原因，不自动再抽；尚未执行则保持pending。
+- 2026-10-19 Cursor 执行记录（本机 work/art-pilot/goshawk-cursor-001，私有，不入库）：照片 Created_goshawk_.jpg SHA-256 66c4523a…575633b5，风格参考游隼 9393f594…24417942、诗人 ee4bc7fe…f096e753，顺序游隼→诗人→照片。prepare goshawk-001（provider cursor-desktop，model unknown，aspect_ratio 1:1）经用户审核后单次 GenerateImage；输出 JPEG 1024×1024 RGB，SHA-256 90289e2dc3f710fb5def1052788dedc5dacc1e5e82c0edfdddc116516abd0fe1，原样 complete，证据 host-agent-attested（prompt 由 Agent 逐字转录，未与工具日志机器比对）。technical：canvas-alpha、technical-targets 均 fail（无 alpha、非 256×256），故不可采用；未做后处理。人审：cty41 于 2026-10-19 在 Cursor 会话查看候选、128/150 预览及游隼/诗人参考后选择 adopt，七个 human 项全部 pass（未附额外文字理由），review 事件 production-event-4d862eb4…。adopt 被门禁拒绝（required automatic acceptance did not pass），未写 current 投影。结论：Cursor 路径的风格/身份获真实人工认可，正式采用待透明背景与 256×256 输出的诚实后处理/派生方案。
+- 2026-10-19 派生：art-pilot derive 新增确定性 matte-resize（边缘泛洪抠背景、按冻结 targets 缩放与放置，见 runbook）。goshawk-001-sprite 绑定父候选 goshawk-001，参数 keyColor #FFFFFD（corners）、tolerance 24、scale 0.25、sourceBox [328,116,737,874]、placedBox [77,35,179,225]；输出 PNG 256×256，SHA-256 24e484c5eb4fcb3d1cc70aa99083177c7b818847aad6e54be1f761fd76064f45。technical：canvas-alpha、technical-targets 均 pass。派生图为新候选，父图人审不复用。精灵图人审：cty41 于 2026-10-19 打开与候选同哈希的 PNG 及三底板预览后选择 adopt，七个 human 项全部 pass。adopt 通过（adoption 事件 production-event-a0cd336a…），current/crested-goshawk-idle.json 状态 adopted，指向 goshawk-001-sprite。
 
 ## [S3] 范围外
 
@@ -103,6 +110,10 @@ OpenAI API key计费、订阅凭证搬运、自动降级、绕过配额、tactic
 ## Tasks
 
 - [x] T1：本机入口核验 — 已确认CLI 0.161.0、ChatGPT登录、两次实际产图与返回文件；输入参数证据为宿主声明，型号/计费未知，不读取token。(covers: S1, S2.1, S2.2)
+- [x] T1b：Cursor 入口核验 — 已在 Cursor 会话单次调用 GenerateImage 纯文字出图并解码/哈希；参考图交付见 T1c；编辑、模型、计费未测。(covers: S1, S2.1, S2.2)
+- [x] T7-cursor：凤头鹰经 Cursor 单次实际出图、complete、technical（两项 automatic fail）、真实人审 adopt 已记录；原图采用因 automatic 门禁被拒，经 matte-resize 派生精灵图重新 technical 全 pass、真实人审 adopt 后正式采用。T7 原定 Codex 执行路径仍未勾选。(covers: S2.7)
+- [x] T1c：Cursor 参考图交付探测 — 单图参考复现已完成，见 §2.2 Cursor 映射。(covers: S2.2)
+- [ ] T8：Cursor 执行路径 — 验收：参考图实际交付单独授权实测；按 Cursor 映射冻结参数与结果核对；缺能力阻断不降级；自动执行桥未实现前不宣称交付。(covers: S2.1, S2.2, S2.3; depends: T1b, T3)
 - [ ] T2：规范任务、能力快照与显式provider选择 — 验收：偏好Codex但缺能力时不执行不降级；未知模型不假称GPT；操作与参数按真实工具定义。(covers: S2.1, S2.2; depends: T1)
 - [ ] T3：实际工具参数冻结与执行结果核对 — 验收：假后端证明prompt/图序/哈希漂移拒绝；结果只绑定对应attempt；宿主证明与Agent声明明确区分。(covers: S2.3; depends: T2)
 - [ ] T4：MiMo原生路径与MiMo内Codex CLI执行桥 — 验收：参数数组/标准输入传递完整prompt与有序图像路径；只调用一次；缺工具/未登录/权限拒绝清楚报错；超时不自动重抽；默认目录产图可安全核验收录；不读取凭证，不要求用户手动搬会话。(covers: S2.1, S2.2, S2.3, S2.5; depends: T3)

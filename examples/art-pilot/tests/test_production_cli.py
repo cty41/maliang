@@ -251,6 +251,76 @@ class ProductionCLI(unittest.TestCase):
         self.cli("adopt", "--attempt", edit["attemptId"], "--asset", "bird", "--review", self.event_path(review),
                  "--result", self.event_path(results[0]), ok=False)
 
+    def matte_candidate(self, attempt, draw):
+        image = Image.new("RGB", (32, 32), (250, 250, 250))
+        draw(image)
+        image.save(self.root / "image.png")
+        return self.complete(attempt, self.prepare(attempt))
+
+    def test_matte_resize_derives_target_sprite_and_requires_new_review(self):
+        self.contract["targets"].update(sourceSize=[32, 32], outputSize=[16, 16], anchorX=16, groundY=28)
+        self.compile()
+        def capsule(image):
+            image.paste((40, 40, 40), (10, 8, 22, 28))
+            image.paste((245, 245, 240), (13, 14, 19, 20))
+        parent = self.matte_candidate("raw", capsule)
+        parent_review = self.review(parent)
+        derived = self.cli("derive", "--attempt", "sprite", "--parent", "raw", "--operation", "matte-resize")
+        self.assertEqual(derived["parent"], {k: parent[k] for k in ("eventId", "attemptId", "artifact")})
+        params = derived["parameters"]
+        self.assertEqual(params["floodFrom"], "edges")
+        self.assertEqual(params["keyColorSource"], "corners")
+        self.assertEqual(params["keyColor"], "#FAFAFA")
+        self.assertEqual(params["sourceBox"], [10, 8, 22, 28])
+        self.assertEqual(params["outputSize"], [16, 16])
+        with Image.open(self.root / derived["artifact"]["path"]) as sprite:
+            self.assertEqual(sprite.format, "PNG")
+            self.assertEqual(sprite.size, (16, 16))
+            sprite = sprite.convert("RGBA")
+            box = sprite.getchannel("A").getbbox()
+            self.assertLessEqual(abs(box[3] - 14), 1)
+            self.assertLessEqual(abs((box[0] + box[2]) / 2 - 8), 1)
+            inner = sprite.getpixel((8, 8))
+            self.assertEqual(inner[3], 255)
+            self.assertGreater(min(inner[:3]), 200)
+        results = self.cli("technical", "--attempt", "sprite")
+        self.assertEqual([r["status"] for r in results], ["pass"])
+        self.cli("adopt", "--attempt", "sprite", "--asset", "bird", "--review", self.event_path(parent_review),
+                 "--result", self.event_path(results[0]), ok=False)
+        review = self.review(derived)
+        adoption = self.cli("adopt", "--attempt", "sprite", "--asset", "bird", "--review", self.event_path(review),
+                            "--result", self.event_path(results[0]))
+        self.assertEqual(adoption["candidate"]["attemptId"], "sprite")
+
+    def test_matte_resize_rejects_without_claiming_attempt(self):
+        self.contract["targets"].update(sourceSize=[32, 32], outputSize=[16, 16], anchorX=16, groundY=28)
+        self.compile()
+        cases = {
+            "empty": lambda image: None,
+            "edge": lambda image: image.paste((40, 40, 40), (0, 8, 12, 28)),
+            "overflow": lambda image: image.paste((40, 40, 40), (10, 1, 22, 31)),
+        }
+        for name, draw in cases.items():
+            with self.subTest(name=name):
+                self.matte_candidate(name, draw)
+                self.cli("derive", "--attempt", f"{name}-sprite", "--parent", name, "--operation", "matte-resize", ok=False)
+                self.assertFalse((self.root / f"production/attempts/{name}-sprite/claim.json").exists())
+        self.matte_candidate("keyed", lambda image: (image.paste((0, 200, 0), (2, 2, 30, 30)),
+                                                     image.paste((40, 40, 40), (10, 8, 22, 28))))
+        for bad in (["--key-color", "#12345G"], ["--key-color", "#1234"], ["--tolerance", "256"]):
+            with self.subTest(bad=bad):
+                self.cli("derive", "--attempt", "keyed-bad", "--parent", "keyed", "--operation", "matte-resize", *bad, ok=False)
+                self.assertFalse((self.root / "production/attempts/keyed-bad/claim.json").exists())
+        keyed = self.cli("derive", "--attempt", "keyed-sprite", "--parent", "keyed", "--operation", "matte-resize",
+                         "--key-color", "#FAFAFA", "--tolerance", "8")
+        self.assertEqual((keyed["parameters"]["keyColor"], keyed["parameters"]["keyColorSource"]), ("#FAFAFA", "explicit"))
+        self.assertEqual(keyed["parameters"]["sourceBox"], [2, 2, 30, 30])
+        Image.new("RGB", (16, 16), (250, 250, 250)).save(self.root / "image.png")
+        self.complete("small", self.prepare("small"))
+        self.assertIn("sourceSize", self.cli("derive", "--attempt", "small-sprite", "--parent", "small",
+                                              "--operation", "matte-resize", ok=False))
+        self.assertFalse((self.root / "production/attempts/small-sprite/claim.json").exists())
+
     def test_current_entrypoints_reject_legacy_approval_shortcuts(self):
         for name in ("production.py", "extract_acceptance.py"):
             result = subprocess.run([sys.executable, "-I", str(PROJECT / "scripts" / name), "--decide", "approve"],

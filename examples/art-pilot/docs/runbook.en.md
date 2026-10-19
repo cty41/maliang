@@ -94,7 +94,13 @@ python -I examples/art-pilot/scripts/production.py --project work/art-pilot tech
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot review --attempt bird-001 --decision-file human-decision.json
 ```
 
-technical decodes the actual image, runs every required automatic predicate, and binds results to the exact candidate. Passing dimensions, nonempty alpha, and bounds checks does not prove artistic quality. derive supports only copy / flip-x and binds the parent candidate; it is not native-view image generation or implicit approval of a handedness change.
+technical decodes the actual image, runs every required automatic predicate, and binds results to the exact candidate. Passing dimensions, nonempty alpha, and bounds checks does not prove artistic quality. derive supports copy / flip-x / matte-resize and binds the parent candidate; it is not native-view image generation or implicit approval of a handedness change.
+
+matte-resize is deterministic post-processing, not regeneration. The parent size must equal the frozen `sourceSize`. It flood-fills from all four canvas edges and makes only edge-connected pixels within tolerance of the key color transparent, so similar interior colors stay opaque. It then scales by `outputSize / sourceSize` with LANCZOS, aligns the subject bottom to `groundY` and its horizontal center to `anchorX`, and writes PNG. The key color defaults to the corner median; set `--key-color #RRGGBB` explicitly if needed; `--tolerance` defaults to 24. An empty matte, a subject touching the source edge, or placement outside the output canvas fails without creating an attempt. It suits flat backgrounds only; complex backgrounds should fail rather than be forced. The derived record keeps every parameter. The derived image is a new candidate and needs its own technical run and real human review; the parent's review cannot be reused.
+
+```powershell
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot derive --attempt bird-001-sprite --parent bird-001 --operation matte-resize
+```
 
 The human decision-file must originate from a real decision: `actorType: "human"`, a real reviewer, the candidate's complete eventId/attemptId/artifact, `identityChecklist: ["identity"]`, a nonempty genuine statement, a real timezone-aware decidedAt, adopt/reject/pending, and pass/fail/pending/unsupported for every required human item. Agents must not fabricate real human pass values to advance the workflow.
 

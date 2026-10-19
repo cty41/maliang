@@ -59,6 +59,89 @@ def freeze_artifact(root, relative):
     return {"path": path, "sha256": digest(data)}
 
 
+def frozen_packet(root, store, candidate):
+    original = candidate
+    while original["recordType"] == "derived":
+        original = store.load_candidate(original["parent"]["attemptId"])
+    if original["recordType"] in {"generation", "edit"}:
+        sha = store.load_prepared(original["attemptId"])["invocation"]["request"]["designPackageSha256"]
+    else:
+        sha = original["task"]["designPackageSha256"]
+    if digest(source(root, f"production/designs/{sha}.json").read_bytes()) != sha:
+        raise ValueError("frozen design hash mismatch")
+    return read_json(root, f"production/designs/{sha}.json"), sha
+
+
+def matte_resize(data, targets, key_color=None, tolerance=24):
+    """Key edge-connected background only, so interior colors near the key stay opaque."""
+    from collections import deque
+    from io import BytesIO
+    from PIL import Image
+    if not 0 <= tolerance <= 255:
+        raise ValueError("tolerance must be within 0..255")
+    with Image.open(BytesIO(data)) as header:
+        if header.width * header.height > 2048 ** 2:
+            raise ValueError("matte image exceeds 4194304 pixel decode budget")
+        image = header.convert("RGBA")
+    sw, sh = targets["sourceSize"]
+    if image.size != (sw, sh):
+        raise ValueError(f"parent size {list(image.size)} differs from frozen sourceSize {[sw, sh]}")
+    ow, oh = targets["outputSize"]
+    if ow * sh != oh * sw:
+        raise ValueError("outputSize must keep the sourceSize aspect ratio")
+    pixels = image.load()
+    if key_color is None:
+        corners = [pixels[x, y][:3] for x, y in ((0, 0), (sw - 1, 0), (0, sh - 1), (sw - 1, sh - 1))]
+        key = tuple(sorted(c[i] for c in corners)[1] for i in range(3))
+        key_source = "corners"
+    else:
+        text = key_color.removeprefix("#")
+        if len(text) != 6 or any(c not in "0123456789abcdefABCDEF" for c in text):
+            raise ValueError("key color must be #RRGGBB")
+        key = tuple(int(text[i:i + 2], 16) for i in (0, 2, 4))
+        key_source = "explicit"
+    near = lambda p: max(abs(p[i] - key[i]) for i in range(3)) <= tolerance
+    seen = bytearray(sw * sh)
+    queue = deque()
+    for x in range(sw):
+        queue.extend(((x, 0), (x, sh - 1)))
+    for y in range(sh):
+        queue.extend(((0, y), (sw - 1, y)))
+    while queue:
+        x, y = queue.popleft()
+        index = y * sw + x
+        if seen[index] or not near(pixels[x, y]):
+            continue
+        seen[index] = 1
+        pixels[x, y] = (0, 0, 0, 0)
+        if x > 0: queue.append((x - 1, y))
+        if x < sw - 1: queue.append((x + 1, y))
+        if y > 0: queue.append((x, y - 1))
+        if y < sh - 1: queue.append((x, y + 1))
+    box = image.getchannel("A").getbbox()
+    if box is None:
+        raise ValueError("matte left no opaque subject")
+    if box[0] == 0 or box[1] == 0 or box[2] == sw or box[3] == sh:
+        raise ValueError("matted subject touches the source canvas edge")
+    scale = ow / sw
+    subject = image.crop(box)
+    size = (max(1, round(subject.width * scale)), max(1, round(subject.height * scale)))
+    subject = subject.resize(size, Image.LANCZOS)
+    left = round(targets["anchorX"] * scale - size[0] / 2)
+    top = round(targets["groundY"] * scale) - size[1]
+    if left < 0 or top < 0 or left + size[0] > ow or top + size[1] > oh:
+        raise ValueError("placed subject would leave the output canvas")
+    canvas = Image.new("RGBA", (ow, oh), (0, 0, 0, 0))
+    canvas.paste(subject, (left, top))
+    output = BytesIO()
+    canvas.save(output, format="PNG")
+    return output.getvalue(), {
+        "keyColor": "#%02X%02X%02X" % key, "keyColorSource": key_source, "tolerance": tolerance,
+        "floodFrom": "edges", "sourceSize": [sw, sh], "outputSize": [ow, oh], "scale": scale,
+        "resample": "LANCZOS", "sourceBox": list(box), "placedBox": [left, top, left + size[0], top + size[1]],
+        "anchorX": targets["anchorX"], "groundY": targets["groundY"]}
+
+
 def packet_data(root, relative, contract_path, draft_path):
     data = source(root, relative).read_bytes()
     packet = json.loads(data)
@@ -105,7 +188,9 @@ def main(argv=None):
     derive = commands.add_parser("derive")
     derive.add_argument("--attempt", required=True)
     derive.add_argument("--parent", required=True)
-    derive.add_argument("--operation", choices=["flip-x", "copy"], required=True)
+    derive.add_argument("--operation", choices=["flip-x", "copy", "matte-resize"], required=True)
+    derive.add_argument("--key-color", help="matte-resize background #RRGGBB; default is the corner median")
+    derive.add_argument("--tolerance", type=int, default=24, help="matte-resize max RGB channel difference")
     technical = commands.add_parser("technical")
     technical.add_argument("--attempt", required=True)
     review = commands.add_parser("review")
@@ -184,26 +269,22 @@ def main(argv=None):
         from PIL import Image, ImageOps
         parent = store.load_candidate(args.parent)
         data = source(root, parent["artifact"]["path"]).read_bytes()
-        if args.operation == "flip-x":
+        parameters = {}
+        if args.operation == "matte-resize":
+            packet, sha = frozen_packet(root, store, parent)
+            data, parameters = matte_resize(data, packet["targets"], args.key_color, args.tolerance)
+            parameters["designPackageSha256"] = sha
+        elif args.operation == "flip-x":
             with Image.open(BytesIO(data)) as image:
                 if image.width * image.height > 2048 ** 2:
                     raise ValueError("mirror image exceeds 4194304 pixel decode budget")
                 output = BytesIO()
                 ImageOps.mirror(image).save(output, format="PNG")
                 data = output.getvalue()
-        result = store.derive(parent, data, attempt_id=args.attempt, operation=args.operation, parameters={})
+        result = store.derive(parent, data, attempt_id=args.attempt, operation=args.operation, parameters=parameters)
     elif args.command == "technical":
         candidate = store.load_candidate(args.attempt)
-        original = candidate
-        while original["recordType"] == "derived":
-            original = store.load_candidate(original["parent"]["attemptId"])
-        if original["recordType"] in {"generation", "edit"}:
-            sha = store.load_prepared(original["attemptId"])["invocation"]["request"]["designPackageSha256"]
-        else:
-            sha = original["task"]["designPackageSha256"]
-        packet = read_json(root, f"production/designs/{sha}.json")
-        if digest(source(root, f"production/designs/{sha}.json").read_bytes()) != sha:
-            raise ValueError("frozen design hash mismatch")
+        packet = frozen_packet(root, store, candidate)[0]
         result = []
         for item in packet["acceptance"]:
             if not item["required"] or item["method"] != "alpha-bounds":

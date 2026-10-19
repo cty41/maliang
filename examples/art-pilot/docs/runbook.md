@@ -106,7 +106,13 @@ python -I examples/art-pilot/scripts/production.py --project work/art-pilot tech
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot review --attempt bird-001 --decision-file human-decision.json
 ```
 
-technical 解码实际图像，运行每个必需自动谓词并绑定精确候选；尺寸、非空 alpha、边界通过不能证明艺术质量。derive 仅支持 copy / flip-x，并绑定父候选；不是原生视角生图或隐式换手认可。
+technical 解码实际图像，运行每个必需自动谓词并绑定精确候选；尺寸、非空 alpha、边界通过不能证明艺术质量。derive 支持 copy / flip-x / matte-resize，并绑定父候选；不是原生视角生图或隐式换手认可。
+
+matte-resize 是确定性后处理，不是重新生图：父图尺寸须等于冻结 `sourceSize`；从画布四边泛洪，只把与边缘连通且颜色在容差内的背景设为透明（内部相近颜色保留）；按 `outputSize / sourceSize` 等比 LANCZOS 缩放，主体底边对齐 `groundY`、水平中心对齐 `anchorX`，输出 PNG。背景色默认取四角中位数，可用 `--key-color #RRGGBB` 指定，`--tolerance` 默认 24。抠图为空、主体碰源图边缘或放置越出画布均报错且不创建 attempt；仅适合纯色背景，复杂背景应失败而非硬凑。派生记录保存全部参数；派生图是新候选，必须重新 technical 与真实人审，父图人审不能复用。
+
+```powershell
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot derive --attempt bird-001-sprite --parent bird-001 --operation matte-resize
+```
 
 人审 decision-file 必须由真实决定产生：`actorType: "human"`、真实 reviewer、候选完整 eventId/attemptId/artifact、`identityChecklist: ["identity"]`、非空真实 statement、真实带时区 decidedAt、adopt/reject/pending，以及全部必需 human 项的 pass/fail/pending/unsupported。Agent 不得为了推进流程编写真实 human pass。
 
