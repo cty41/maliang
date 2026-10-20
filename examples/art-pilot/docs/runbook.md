@@ -75,7 +75,7 @@ production CLI 的 prepare，再用 Pillow 创建 16×16 合成色块并绑定�
 ## 2. prepare / acceptance
 
 ```powershell
-python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown --character bird
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot acceptance --contract family-contract.json --draft draft.json --design packet/design.json
 ```
 
@@ -86,6 +86,12 @@ prepare 重新编译合同 / Draft 并核对 prompt、任务、输入顺序/职�
 ## 3. 外部执行与完成
 
 库和脚本不自动调用图像服务。执行器必须读取 `production/attempts/<id>/prepared.json`，真实提交冻结 prompt、参数和输入图，并保留可核验工具记录。Codex provider 执行桥仍未实现，登录不是离线回归先决条件。
+
+`--character` 必填。角色首次 prepare 写入不可覆盖的 `production/host-locks/<角色>.json`，此后该角色所有 prepare 的 `--provider` 与 `--model` 必须一致；`--parent` 必须属于同一角色且同一生图宿主；derive 继承父角色。没有强制切换开关，换宿主请新建角色。
+
+### Cursor 执行（半自动）
+
+以 `--provider cursor-desktop` prepare 后（参数文件仅允许 `aspect_ratio`：1:1、4:3、3:4、16:9、9:16），运行 `cursor-packet --attempt <id>`，把输出的 `call` 原样交给 Cursor GenerateImage，不要手抄 prompt。用户授权并生成后运行 `cursor-complete --attempt <id> --output <工具报告路径>`；失败用 `cursor-fail --attempt <id> --message <原因>`。回执证据级别为 `host-agent-attested`：MaLiang 无法调用 Cursor 工具，也不读取 Cursor 会话记录，模型与计费保持 unknown。
 
 成功回执必须包含：`preparedEventId`（原样）、`invocation`（完整对象，非字符串）、`outcome: "success"`、真实 `artifactSha256`、真实 `executionEvidence`。
 

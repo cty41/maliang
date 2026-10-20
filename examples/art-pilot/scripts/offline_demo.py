@@ -83,7 +83,8 @@ def main(argv=None):
     prepared = production(root, "prepare", "--attempt", attempt,
                           "--contract", "contract.json", "--draft", "draft.json",
                           "--design", "design.json", "--parameters", "parameters.json",
-                          "--provider", "offline-synthetic", "--model", "not-a-model")
+                          "--provider", "offline-synthetic", "--model", "not-a-model",
+                          "--character", "synthetic-demo")
     image = Image.new("RGBA", (16, 16))
     image.paste((255, 0, 0, 255), (3, 3, 12, 12))
     image.save(root / "synthetic-image.png")

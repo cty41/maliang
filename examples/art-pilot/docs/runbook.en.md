@@ -63,7 +63,7 @@ If using curated examples, the repository reference is `characters/shared/poet-i
 ## 2. prepare / acceptance
 
 ```powershell
-python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown --character bird
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot acceptance --contract family-contract.json --draft draft.json --design packet/design.json
 ```
 
@@ -74,6 +74,12 @@ Edits still require their own editing-task contract / Draft / design, plus `--pa
 ## 3. External execution and completion
 
 Neither the library nor the scripts automatically call image services. The executor must read `production/attempts/<id>/prepared.json`, actually submit the frozen prompt, parameters, and input images, and retain verifiable tool records. The Codex provider execution bridge remains unimplemented; login is not a prerequisite for offline regressions.
+
+`--character` is required. A character's first prepare writes the immutable `production/host-locks/<character>.json`; every later prepare for that character must use the same `--provider` and `--model`; `--parent` must belong to the same character and generation host; derive inherits the parent's character. There is no force-switch flag: start a new character to change hosts.
+
+### Cursor execution (semi-automatic)
+
+After preparing with `--provider cursor-desktop` (the parameters file may only contain `aspect_ratio`: 1:1, 4:3, 3:4, 16:9, 9:16), run `cursor-packet --attempt <id>` and pass the printed `call` unchanged to Cursor GenerateImage; never retype the prompt. After the user authorizes and the image is generated, run `cursor-complete --attempt <id> --output <tool-reported path>`; on failure run `cursor-fail --attempt <id> --message <reason>`. The receipt is `host-agent-attested`: MaLiang cannot invoke Cursor tools and does not read Cursor transcripts, so model and billing stay unknown.
 
 A successful receipt must contain: `preparedEventId` (unchanged), `invocation` (the complete object, not a string), `outcome: "success"`, the actual `artifactSha256`, and real `executionEvidence`.
 

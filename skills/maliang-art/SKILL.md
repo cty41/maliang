@@ -104,10 +104,14 @@ asset project, the initial local sequence is:
 ```text
 python -m maliang_art design validate --contract work/art-pilot/family-contract.json --draft work/art-pilot/draft.json
 python -m maliang_art design compile --contract work/art-pilot/family-contract.json --draft work/art-pilot/draft.json --output-dir work/art-pilot/packet
-python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot prepare --attempt bird-001 --contract family-contract.json --draft draft.json --design packet/design.json --parameters backend-params.json --provider actual-provider --model unknown --character bird
 python -I examples/art-pilot/scripts/production.py --project work/art-pilot acceptance --contract family-contract.json --draft draft.json --design packet/design.json
 ```
 
+`--character` pins the character to one provider and model for its whole
+lifecycle; never switch hosts mid-character. With `cursor-desktop`, always use
+`cursor-packet` output as the GenerateImage call (do not transcribe the prompt),
+then `cursor-complete --output` or `cursor-fail --message`.
 Replace `actual-provider` with the selected real provider before preparing; an
 unavailable executor remains a blocker, not permission to manufacture a provider.
 Validation success is exit 0 with `valid: true`; failures require correcting the

@@ -37,7 +37,8 @@ commits:
 
 1. mimo-desktop：当前 MiMo Agent 调用原生 image_gen/image_edit，显式备选。
 2. codex-subscription：在 MiMo Desktop 内通过本机 codex exec 调度已用 ChatGPT 登录的 Codex 图像工具，默认首选；不是要求用户搬到 Codex 会话手动执行，也不是用 MiMo 原生工具指定 GPT。
-3. cursor-desktop：当前 Cursor Agent 会话直接调用其原生 GenerateImage，显式选择；不是 Cursor SDK 子进程，当前也没有 Python 执行桥。
+3. cursor-desktop：当前 Cursor Agent 会话直接调用其原生 GenerateImage，显式选择；不是 Cursor SDK 子进程。art-pilot 提供半自动桥：`cursor-packet` 由冻结请求生成 GenerateImage 调用参数（仅映射 aspect_ratio，其余参数拒绝），`cursor-complete --output` 绑定工具报告的输出，`cursor-fail` 记录失败；证据为 host-agent-attested，不读 Cursor 会话记录。全自动不可行：Python 进程无法调用宿主 Agent 工具。
+4. 角色级宿主锁：prepare 必须带 `--character`；首次写入不可覆盖的 `production/host-locks/<角色>.json`，之后 provider 与 model 必须一致，edit 父候选须同角色同生图宿主，derive 继承角色，import 不受限，无强制切换开关。
 
 第一版直接实现已实测的本地 CLI 执行桥。MiMo/马良冻结任务、拉起受限 Codex 子进程，Codex 调用其实际暴露的图像工具，父进程接收报告并核验图片。文件执行包用于本地审计与参数传递，不再是必须人工移交的产品主路径。不要求整个项目开发更换 Agent，不扩大为通用远程 Agent 平台。
 
@@ -113,7 +114,7 @@ OpenAI API key计费、订阅凭证搬运、自动降级、绕过配额、tactic
 - [x] T1b：Cursor 入口核验 — 已在 Cursor 会话单次调用 GenerateImage 纯文字出图并解码/哈希；参考图交付见 T1c；编辑、模型、计费未测。(covers: S1, S2.1, S2.2)
 - [x] T7-cursor：凤头鹰经 Cursor 单次实际出图、complete、technical（两项 automatic fail）、真实人审 adopt 已记录；原图采用因 automatic 门禁被拒，经 matte-resize 派生精灵图重新 technical 全 pass、真实人审 adopt 后正式采用。T7 原定 Codex 执行路径仍未勾选。(covers: S2.7)
 - [x] T1c：Cursor 参考图交付探测 — 单图参考复现已完成，见 §2.2 Cursor 映射。(covers: S2.2)
-- [ ] T8：Cursor 执行路径 — 验收：参考图实际交付单独授权实测；按 Cursor 映射冻结参数与结果核对；缺能力阻断不降级；自动执行桥未实现前不宣称交付。(covers: S2.1, S2.2, S2.3; depends: T1b, T3)
+- [x] T8：Cursor 执行路径（半自动桥 cursor-packet/complete/fail 与角色级宿主锁已实现并有离线测试；无全自动桥，见 §2.1） — 验收：参考图实际交付单独授权实测；按 Cursor 映射冻结参数与结果核对；缺能力阻断不降级；自动执行桥未实现前不宣称交付。(covers: S2.1, S2.2, S2.3; depends: T1b, T3)
 - [ ] T2：规范任务、能力快照与显式provider选择 — 验收：偏好Codex但缺能力时不执行不降级；未知模型不假称GPT；操作与参数按真实工具定义。(covers: S2.1, S2.2; depends: T1)
 - [ ] T3：实际工具参数冻结与执行结果核对 — 验收：假后端证明prompt/图序/哈希漂移拒绝；结果只绑定对应attempt；宿主证明与Agent声明明确区分。(covers: S2.3; depends: T2)
 - [ ] T4：MiMo原生路径与MiMo内Codex CLI执行桥 — 验收：参数数组/标准输入传递完整prompt与有序图像路径；只调用一次；缺工具/未登录/权限拒绝清楚报错；超时不自动重抽；默认目录产图可安全核验收录；不读取凭证，不要求用户手动搬会话。(covers: S2.1, S2.2, S2.3, S2.5; depends: T3)

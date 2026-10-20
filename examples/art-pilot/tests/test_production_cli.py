@@ -93,7 +93,7 @@ class ProductionCLI(unittest.TestCase):
                 mutation(packet)
                 self.write("design.json", packet)
                 self.cli("prepare", "--attempt", f"tampered-{index}", "--design", "design.json", "--parameters", "params.json",
-                         "--provider", "offline-synthetic", ok=False)
+                         "--provider", "offline-synthetic", "--character", "bird", ok=False)
                 self.assertFalse((self.root / f"production/attempts/tampered-{index}/claim.json").exists())
                 self.cli("import", "--attempt", f"import-tampered-{index}", "--design", "design.json", "--image", "image.png",
                          "--provenance", "synthetic fixture", ok=False)
@@ -119,9 +119,9 @@ class ProductionCLI(unittest.TestCase):
         self.assertNotEqual(completed.returncode, 0, completed.stdout)
         return completed.stderr
 
-    def prepare(self, attempt, *extra):
+    def prepare(self, attempt, *extra, character="bird", provider="offline-synthetic", ok=True):
         return self.cli("prepare", "--attempt", attempt, "--design", "design.json", "--parameters", "params.json",
-                        "--provider", "offline-synthetic", *extra)
+                        "--provider", provider, "--character", character, *extra, ok=ok)
 
     def complete(self, attempt, prepared):
         self.write("receipt.json", {"preparedEventId": prepared["eventId"], "invocation": prepared["invocation"],
@@ -181,7 +181,7 @@ class ProductionCLI(unittest.TestCase):
         self.assertEqual((self.root / v1["artifact"]["path"]).read_bytes(), original)
         self.cli("derive", "--attempt", "mirror", "--parent", "v2", "--operation", "copy", ok=False)
         self.cli("prepare", "--attempt", "v1", "--design", "design.json", "--parameters", "params.json",
-                 "--provider", "offline-synthetic", ok=False)
+                 "--provider", "offline-synthetic", "--character", "bird", ok=False)
 
     def test_frozen_prompt_input_order_and_exact_completion(self):
         prepared = self.prepare("frozen")
@@ -205,7 +205,7 @@ class ProductionCLI(unittest.TestCase):
         self.packet["imageInputs"][0]["sha256"] = "0" * 64
         self.write("design.json", self.packet)
         self.cli("prepare", "--attempt", "bad", "--design", "design.json", "--parameters", "params.json",
-                 "--provider", "offline-synthetic", ok=False)
+                 "--provider", "offline-synthetic", "--character", "bird", ok=False)
         self.cli("acceptance", "--design", "../outside.json", ok=False)
         self.cli("acceptance", "--design", str(self.root / "design.json"), ok=False)
         self.compile()
@@ -320,6 +320,97 @@ class ProductionCLI(unittest.TestCase):
         self.assertIn("sourceSize", self.cli("derive", "--attempt", "small-sprite", "--parent", "small",
                                               "--operation", "matte-resize", ok=False))
         self.assertFalse((self.root / "production/attempts/small-sprite/claim.json").exists())
+
+    def lock(self, character):
+        return json.loads((self.root / f"production/host-locks/{character}.json").read_text(encoding="utf-8"))
+
+    def claimed(self, attempt):
+        return (self.root / f"production/attempts/{attempt}/claim.json").exists()
+
+    def test_character_host_lock(self):
+        self.cli("prepare", "--attempt", "no-character", "--design", "design.json", "--parameters", "params.json",
+                 "--provider", "offline-synthetic", ok=False)
+        self.assertFalse(self.claimed("no-character"))
+        self.prepare("bad-id", character="../x", ok=False)
+        self.assertFalse(self.claimed("bad-id"))
+        first = self.complete("first", self.prepare("first"))
+        self.assertEqual({k: self.lock("bird")[k] for k in ("character", "provider", "model", "firstAttemptId")},
+                         {"character": "bird", "provider": "offline-synthetic", "model": "unknown", "firstAttemptId": "first"})
+        self.prepare("other-host", provider="other-synthetic", ok=False)
+        self.assertFalse(self.claimed("other-host"))
+        self.prepare("named-model", "--model", "named-model", ok=False)
+        self.assertFalse(self.claimed("named-model"))
+        self.prepare("second")
+        self.assertEqual(self.lock("bird")["firstAttemptId"], "first")
+        self.complete("cat", self.prepare("cat", character="cat", provider="other-synthetic"))
+        self.prepare("cross-edit", "--parent", "cat", "--instruction", "change wing", ok=False)
+        self.assertFalse(self.claimed("cross-edit"))
+        self.cli("derive", "--attempt", "first-copy", "--parent", "first", "--operation", "copy")
+        self.prepare("edit-derived", "--parent", "first-copy", "--instruction", "change wing")
+        self.prepare("edit-derived-cat", "--parent", "first-copy", "--instruction", "change wing",
+                     character="cat", provider="other-synthetic", ok=False)
+        self.assertEqual(first["attemptId"], "first")
+
+    def cursor_prepared(self, attempt, params=None):
+        self.write("cursor-params.json", {"aspect_ratio": "1:1"} if params is None else params)
+        return self.cli("prepare", "--attempt", attempt, "--design", "design.json", "--parameters", "cursor-params.json",
+                        "--provider", "cursor-desktop", "--character", "cursor-bird")
+
+    def cursor_output(self, attempt, image=None):
+        out = self.root / "host-assets"
+        out.mkdir(exist_ok=True)
+        path = out / f"{attempt}.jpg"
+        (image or Image.new("RGB", (16, 16), (200, 10, 10))).save(path, format="JPEG")
+        return path
+
+    def test_cursor_packet_maps_frozen_request(self):
+        self.prepare("offline")
+        self.assertIn("cursor-desktop", self.cli("cursor-packet", "--attempt", "offline", ok=False))
+        prepared = self.cursor_prepared("cursor-1")
+        packet = self.cli("cursor-packet", "--attempt", "cursor-1")
+        call = packet["call"]
+        self.assertEqual(call["description"], prepared["invocation"]["request"]["prompt"])
+        self.assertEqual(call["aspect_ratio"], "1:1")
+        self.assertEqual(call["filename"], "cursor-1.png")
+        expected = [i["artifact"]["sha256"] for i in prepared["invocation"]["request"]["inputs"]]
+        self.assertEqual([hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in call["reference_image_paths"]], expected)
+        self.assertTrue(all(Path(p).is_absolute() and Path(p).suffix == ".png" for p in call["reference_image_paths"]))
+        stored = self.root / "production/attempts/cursor-1/cursor-call.json"
+        self.assertEqual(json.loads(stored.read_text(encoding="utf-8")), call)
+        self.assertEqual(packet["sha256"], hashlib.sha256(stored.read_bytes()).hexdigest())
+        self.cli("cursor-packet", "--attempt", "cursor-1", ok=False)
+        for index, params in enumerate([{"aspect_ratio": "2:1"}, {"aspect_ratio": "1:1", "size": "256x256"}, {"background": "transparent"}]):
+            with self.subTest(params=params):
+                self.cursor_prepared(f"bad-{index}", params)
+                self.cli("cursor-packet", "--attempt", f"bad-{index}", ok=False)
+                self.assertFalse((self.root / f"production/attempts/bad-{index}/cursor-call.json").exists())
+
+    def test_cursor_complete_and_fail(self):
+        import os
+        self.cursor_prepared("cursor-2")
+        output = self.cursor_output("cursor-2")
+        self.cli("cursor-complete", "--attempt", "cursor-2", "--output", str(output), ok=False)
+        packet = self.cli("cursor-packet", "--attempt", "cursor-2")
+        stored = self.root / "production/attempts/cursor-2/cursor-call.json"
+        old = stored.stat().st_mtime - 60
+        os.utime(output, (old, old))
+        self.cli("cursor-complete", "--attempt", "cursor-2", "--output", str(output), ok=False)
+        wrong = self.cursor_output("other-name")
+        self.cli("cursor-complete", "--attempt", "cursor-2", "--output", str(wrong), ok=False)
+        broken = output.with_name("cursor-2.png")
+        broken.write_bytes(b"not an image")
+        self.cli("cursor-complete", "--attempt", "cursor-2", "--output", str(broken), ok=False)
+        output = self.cursor_output("cursor-2")
+        candidate = self.cli("cursor-complete", "--attempt", "cursor-2", "--output", str(output))
+        self.assertEqual(candidate["artifact"]["sha256"], hashlib.sha256(output.read_bytes()).hexdigest())
+        receipt = json.loads((self.root / candidate["delivery"]["metadata"]["receipt"]["path"]).read_text(encoding="utf-8"))
+        self.assertIn("host-agent-attested", receipt["executionEvidence"])
+        self.assertIn(packet["sha256"], receipt["executionEvidence"])
+        self.cli("cursor-complete", "--attempt", "cursor-2", "--output", str(output), ok=False)
+        self.cursor_prepared("cursor-3")
+        self.cli("cursor-packet", "--attempt", "cursor-3")
+        failure = self.cli("cursor-fail", "--attempt", "cursor-3", "--message", "host reported an error")
+        self.assertEqual(failure["recordType"], "failure")
 
     def test_current_entrypoints_reject_legacy_approval_shortcuts(self):
         for name in ("production.py", "extract_acceptance.py"):
