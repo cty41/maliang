@@ -7,7 +7,30 @@ from typing import Any
 from .rendering import geometry
 from .schema import schema_document, schema_errors
 
-PROFILE = {"North": "UL", "South": "DR", "East": "UL+flipX", "West": "DR+flipX"}
+CAMERA_MODES = {
+    "isometric": {
+        "description": "Isometric 2D game view, camera looking down at about 45 degrees; no vanishing-point perspective.",
+        "views": {"DR": "body faces down-right toward the viewer", "UL": "body faces up-left away from the viewer"},
+        "profile": {"North": "UL", "South": "DR", "East": "UL+flipX", "West": "DR+flipX"},
+    },
+    "side": {
+        "description": "Side-scrolling 2D view, camera level with the character; pure profile, no top or bottom visible.",
+        "views": {"R": "body in profile facing screen right"},
+        "profile": {"North": "none", "South": "none", "East": "R", "West": "R+flipX"},
+    },
+    "top-down": {
+        "description": "Top-down 2D game view, camera high above looking almost straight down at the character.",
+        "views": {"D": "body faces down the screen toward the viewer", "U": "body faces up the screen, back visible",
+                  "R": "body faces screen right"},
+        "profile": {"North": "U", "South": "D", "East": "R", "West": "R+flipX"},
+    },
+    "front": {
+        "description": "Front view: character faces the viewer directly, full body, no perspective tilt.",
+        "views": {"F": "facing the viewer"},
+        "profile": {"North": "none", "South": "F", "East": "none", "West": "none"},
+    },
+}
+PROFILE = CAMERA_MODES["isometric"]["profile"]
 REVIEW_METHODS = {"human", "alpha-bounds"}
 ALPHA_INSTRUCTION = "Output dimensions match; alpha is nonempty; no alpha touches canvas edge."
 
@@ -40,14 +63,18 @@ def validate_design(contract: Any, draft: Any, *, debug_geometry: bool = False) 
     def report(path, message, code="unsupported"):
         result.append(Diagnostic(path, code, message))
 
-    if contract["camera"]["mode"] != "isometric":
-        report("contract.camera.mode", "Only isometric native DR/UL is supported; flat2d is unsupported.")
-    if contract["camera"]["profile"] != PROFILE:
-        report("contract.camera.profile", "Only the explicit North=UL, South=DR, East=UL+flipX, West=DR+flipX profile is supported.")
-    if not contract["camera"]["mirrorAccepted"]:
-        report("contract.camera.mirrorAccepted", "Project must explicitly accept mirror-derived handedness changes.", "missing-decision")
-    if draft["identity"]["forbiddenMirror"]:
-        report("draft.identity.forbiddenMirror", "Identity forbids mirroring but the profile derives two views by flipX.", "conflict")
+    camera = CAMERA_MODES.get(contract["camera"]["mode"])
+    if camera is None:
+        report("contract.camera.mode", f"Supported camera modes are {', '.join(sorted(CAMERA_MODES))}; {contract['camera']['mode']} is unsupported.")
+    else:
+        if contract["camera"]["profile"] != camera["profile"]:
+            expected = ", ".join(f"{k}={v}" for k, v in camera["profile"].items())
+            report("contract.camera.profile", f"The {contract['camera']['mode']} camera requires the explicit profile {expected}.")
+        if any("+flipX" in v for v in camera["profile"].values()):
+            if not contract["camera"]["mirrorAccepted"]:
+                report("contract.camera.mirrorAccepted", "Project must explicitly accept mirror-derived handedness changes.", "missing-decision")
+            if draft["identity"]["forbiddenMirror"]:
+                report("draft.identity.forbiddenMirror", "Identity forbids mirroring but the profile derives views by flipX.", "conflict")
     if draft["silhouetteClass"] not in contract["silhouettes"]:
         report("draft.silhouetteClass", "Choose a visual shape intention permitted by the family.")
     if any(feature not in draft["identity"]["features"] for feature in draft["identity"]["priority"]):
@@ -62,8 +89,8 @@ def validate_design(contract: Any, draft: Any, *, debug_geometry: bool = False) 
     seen_tasks = set()
     for i, task in enumerate(draft["visualMoment"]):
         base = f"draft.visualMoment[{i}]"
-        if task["view"] not in {"DR", "UL"}:
-            report(base + ".view", "Only native DR/UL tasks are supported; flipped views are derived.")
+        if camera is not None and task["view"] not in camera["views"]:
+            report(base + ".view", f"Native views for this camera are {'/'.join(camera['views'])}; flipped views are derived.")
         if task["coreTransform"] not in contract["statePolicy"]["allowedCoreTransforms"]:
             report(base + ".coreTransform", "Core pose transform is not permitted by the family.", "conflict")
         if any(x not in contract["statePolicy"]["allowedPartChanges"] for x in task["partChanges"]):

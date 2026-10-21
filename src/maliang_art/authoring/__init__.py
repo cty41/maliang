@@ -19,7 +19,7 @@ fractions use source-canvas dimensions; part coordinates use the core-local
 unit rectangle. guides holds optional PNG bytes, while options/debugArtifacts
 are labeled debug-layout, unapproved, not-generation-input. Ellipsoid parts and
 screen-direction triangles show code layout, not species, silhouette design,
-isometric projection or pose proof. Their coordinates do not enter the prompt.
+camera projection or pose proof. Camera modes come from validation.CAMERA_MODES. Their coordinates do not enter the prompt.
 
 Palette values are human-reviewed role targets; drawingRules.required separates
 hard requirements from suggestions. alpha-bounds accepts only its exact declared

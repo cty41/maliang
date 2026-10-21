@@ -7,7 +7,7 @@
     "schemaVersion": {"const": 1},
     "familyId": {"type": "string", "minLength": 1},
     "camera": {"type": "object", "additionalProperties": false, "required": ["mode", "profile", "mirrorAccepted"], "properties": {
-      "mode": {"type": "string", "minLength": 1}, "mirrorAccepted": {"type": "boolean"},
+      "mode": {"type": "string", "minLength": 1, "description": "design validate supports isometric (DR/UL), side (R), top-down (D/U/R) and front (F); each mode requires its fixed profile, and unused directions are none."}, "mirrorAccepted": {"type": "boolean"},
       "profile": {"type": "object", "additionalProperties": false, "required": ["North", "South", "East", "West"], "properties": {"North": {"type": "string"}, "South": {"type": "string"}, "East": {"type": "string"}, "West": {"type": "string"}}}
     }},
     "silhouettes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},

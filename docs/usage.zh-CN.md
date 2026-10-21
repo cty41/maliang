@@ -96,7 +96,12 @@ maliang-art design compile --contract family.json --draft slice.json --output-di
 默认不渲染图片：`imageInputs` 只包含声明的参考图，并保持原有顺序。
 家族 `variants` 和部件数字坐标不必填；拓扑部件可以用 `id` 和可选
 `description` 描述物种结构。形体意图须由家族允许，而非由调试渲染器决定。
-相机支持显式 isometric DR/UL profile，镜像派生方向须由项目接受。
+支持的相机模式各自对应固定的显式 profile：`isometric`（North=UL、South=DR、
+East=UL+flipX、West=DR+flipX）、`side`（East=R、West=R+flipX）、`top-down`
+（North=U、South=D、East=R、West=R+flipX）和 `front`（South=F）。不用的方向写
+`none`，其语境板格子标为 `not-applicable`。任务只能使用该模式的原生视角；含
+`flipX` 的 profile 须由项目接受镜像派生方向。提示词包含模式与所需视角的白话说明
+`cameraGuide`。
 编译准备的是执行简报，不是批准设计。
 
 色板和艺术判断仍待人工审核；语境板只有布局，不代表未来候选图片。
@@ -115,7 +120,7 @@ maliang-art design compile --contract family.json --draft slice.json --output-di
 此模式需要明确的数字 variants 和部件 anchor/size，校验布局边界，并额外发布
 `guides/*.png`。产物标记为 **debug-layout**、**unapproved**、
 **not-generation-input**，绝不进入 `imageInputs`。
-椭圆占位和屏幕方向三角只展示代码布局，不能证明物种、角色剪影、DR/UL 投影、
+椭圆占位和屏幕方向三角只展示代码布局，不能证明物种、角色剪影、相机投影、
 动作姿态、画风、核心量测或跨视图/状态一致性。其坐标也不会成为生图指令。
 视觉探索无需先选定或批准调试图。
 

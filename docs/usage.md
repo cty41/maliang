@@ -108,8 +108,13 @@ By default it renders no images: `imageInputs` contains only declared references
 in their original order. Family `variants` and numeric part coordinates are not
 required; topology parts can describe species structure with `id` and optional
 `description`. Visual shape intentions must be allowed by the family, not by the
-debug renderer. The supported camera profile is explicit isometric DR/UL with
-project-accepted mirror-derived directions. This prepares an execution brief,
+debug renderer. Supported camera modes, each with a fixed explicit profile:
+`isometric` (North=UL, South=DR, East=UL+flipX, West=DR+flipX), `side`
+(East=R, West=R+flipX), `top-down` (North=U, South=D, East=R, West=R+flipX) and
+`front` (South=F). Unused directions are `none` and their context-board cells
+are `not-applicable`. Tasks may use only the mode's native views. Profiles with
+`flipX` require the project to accept mirror-derived directions. The prompt
+includes a plain-language `cameraGuide` for the mode and requested views. This prepares an execution brief,
 not an approved design.
 
 Palette and artistic judgments remain pending human review; context boards are
@@ -132,7 +137,7 @@ This mode requires explicit numeric variants and part anchor/size pairs, validat
 layout bounds, and additionally publishes `guides/*.png`. These artifacts are
 labeled **debug-layout**, **unapproved**, **not-generation-input** and never enter
 `imageInputs`. Ellipsoid placeholders and screen-direction triangles show code
-layout only. They do not prove species, silhouette design, DR/UL projection,
+layout only. They do not prove species, silhouette design, camera projection,
 action pose, style, core measurements, or cross-view/state consistency. Their
 coordinates do not become generation instructions. No debug layout needs to be
 selected or approved before visual exploration.

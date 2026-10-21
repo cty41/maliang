@@ -357,3 +357,67 @@ def test_reference_conflicts_and_traversal():
     diagnostics = validate_design(c, d)
     assert any(x.path.endswith(".path") for x in diagnostics)
     assert any(x.code == "conflict" for x in diagnostics)
+
+
+CAMERA_CASES = {
+    "isometric": ({"North": "UL", "South": "DR", "East": "UL+flipX", "West": "DR+flipX"}, "DR", {"North", "South", "East", "West"}),
+    "side": ({"North": "none", "South": "none", "East": "R", "West": "R+flipX"}, "R", {"East", "West"}),
+    "top-down": ({"North": "U", "South": "D", "East": "R", "West": "R+flipX"}, "D", {"North", "South", "East", "West"}),
+    "front": ({"North": "none", "South": "F", "East": "none", "West": "none"}, "F", {"South"}),
+}
+
+
+def camera_inputs(mode):
+    c, d = inputs()
+    profile, view, _ = CAMERA_CASES[mode]
+    c["camera"] = {"mode": mode, "profile": dict(profile), "mirrorAccepted": True}
+    d["visualMoment"][0]["view"] = view
+    return c, d
+
+
+@pytest.mark.parametrize("mode", sorted(CAMERA_CASES))
+def test_camera_modes_validate_compile_and_mark_inapplicable_cells(mode):
+    c, d = camera_inputs(mode)
+    assert validate_design(c, d) == []
+    packet = compile_design(c, d).document
+    applicable = CAMERA_CASES[mode][2]
+    for cell in packet["contextBoard"]["cells"]:
+        if cell["direction"] in applicable:
+            assert cell["status"] in {"pending", "not-requested"}
+        else:
+            assert cell["projection"] == "none" and cell["status"] == "not-applicable"
+    prompt_data = json.loads(packet["prompt"].split("\n", 1)[1])
+    guide = prompt_data["cameraGuide"]
+    assert guide["mode"] == mode and guide["description"]
+    assert guide["views"][CAMERA_CASES[mode][1]]
+    assert packet["prompt"] == compile_design(copy.deepcopy(c), copy.deepcopy(d)).document["prompt"]
+
+
+@pytest.mark.parametrize("mode", sorted(CAMERA_CASES))
+def test_camera_modes_render_stable_debug_guides(mode):
+    c, d = camera_inputs(mode)
+    a = compile_design(c, d, debug_geometry=True)
+    assert a.guides and a.guides == compile_design(copy.deepcopy(c), copy.deepcopy(d), debug_geometry=True).guides
+
+
+def test_side_mode_rejects_isometric_view_and_profile_mismatch():
+    c, d = camera_inputs("side")
+    d["visualMoment"][0]["view"] = "DR"
+    assert any(x.path == "draft.visualMoment[0].view" for x in validate_design(c, d))
+    c, d = camera_inputs("side")
+    c["camera"]["profile"]["North"] = "U"
+    assert any(x.path == "contract.camera.profile" for x in validate_design(c, d))
+    c, d = camera_inputs("side")
+    c["camera"]["mode"] = "oblique"
+    diagnostics = [x for x in validate_design(c, d) if x.path == "contract.camera.mode"]
+    assert diagnostics and "front" in diagnostics[0].message
+
+
+def test_mirror_acceptance_only_required_when_profile_flips():
+    c, d = camera_inputs("front")
+    c["camera"]["mirrorAccepted"] = False
+    d["identity"]["forbiddenMirror"] = ["left badge"]
+    assert validate_design(c, d) == []
+    c, d = camera_inputs("side")
+    c["camera"]["mirrorAccepted"] = False
+    assert any(x.path == "contract.camera.mirrorAccepted" and x.code == "missing-decision" for x in validate_design(c, d))

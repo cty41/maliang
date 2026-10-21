@@ -11,7 +11,7 @@ from PIL import Image
 
 from maliang_art.core import canonical_bytes, stable_id
 from .rendering import geometry, render_blockout
-from .validation import DesignError, effective_values, validate_design
+from .validation import CAMERA_MODES, DesignError, effective_values, validate_design
 
 
 @dataclass(frozen=True)
@@ -88,15 +88,19 @@ def compile_design(contract: dict, draft: dict, *, debug_geometry: bool = False)
             cells.append({"state": state, "direction": direction, "projection": projection,
                           "position": [(index % columns) * cell_width, (index // columns) * cell_height],
                           "size": [cell_width, cell_height], "candidate": None,
-                          "status": "pending" if (projection.split("+")[0], state) in {(t['view'], t['state']) for t in draft['visualMoment']} else "not-requested"})
+                          "status": "not-applicable" if projection == "none" else
+                          "pending" if (projection.split("+")[0], state) in {(t['view'], t['state']) for t in draft['visualMoment']} else "not-requested"})
+    camera_mode = CAMERA_MODES[contract["camera"]["mode"]]
+    camera_guide = {"mode": contract["camera"]["mode"], "description": camera_mode["description"],
+                    "views": {view: camera_mode["views"][view] for view in native_views}}
     instructions = {
         "priority": ["family camera/topology prohibitions", "identity invariants", "declared moment", "reference role boundaries", "style suggestions"],
         "familyRules": contract["drawingRules"], "identity": draft["identity"], "topology": topology,
-        "camera": contract["camera"], "tasks": draft["visualMoment"], "statePolicy": contract["statePolicy"],
+        "camera": contract["camera"], "cameraGuide": camera_guide, "tasks": draft["visualMoment"], "statePolicy": contract["statePolicy"],
         "silhouetteClass": draft["silhouetteClass"], "paletteRoles": palette, "targets": targets, "imageInputs": image_inputs,
     }
     prompt = ("Visual execution brief, not a compliance guarantee. Explore the declared character and visual moment. "
-              "Optional debug-layout artifacts are unapproved, not-generation-input; they prove neither species nor DR/UL projection. "
+              "Optional debug-layout artifacts are unapproved, not-generation-input; they prove neither species nor camera projection. "
               "Preserve core/attachment identity; pose projection may vary. Do not infer an attack from a state label. "
               "Use images only for their listed roles and borrowing permissions; no implicit cross-character identity transfer. "
               "Declared palette colors are role targets for human review; do not claim automatic aesthetic compliance. "
