@@ -219,6 +219,7 @@ only after the user has explicitly replied to the sheet in the conversation.
 
 ```python
 from maliang_art.concept import draft_identity_findings, markers_to_identity, palette_findings
+from maliang_art.concept import reading_to_markers, reading_to_style_rules
 ```
 
 `markers_to_identity` builds a sprite-slice draft `identity` block from each
@@ -226,6 +227,19 @@ marker's `capsuleTranslation`; `draft_identity_findings` reports required
 markers missing from a draft; `palette_findings` compares caller-supplied
 opaque color counts with the marker palette. None of these generate images or
 judge likeness. See the synthetic `examples/art-pilot/characters/concept-demo`.
+
+An `art-reading` records what was read from one bound source image: identity
+features, palette roles, and style findings (silhouette, proportion, linework,
+shading and lighting, material, composition, mood), each marked
+`host-model-observed` or `human-confirmed`. A confirmed reading needs every
+identity feature human-confirmed; external references must be `style-only` and
+carry no identity features. Frozen markers that list `readingIds` must cite
+confirmed identity readings of the same character and, for own concepts, of
+the approved concept image those markers cite. `reading_to_markers` drafts
+markers whose `capsuleTranslation` a human still writes; frozen markers reject
+that placeholder and need at least one required marker; `reading_to_style_rules` drafts
+human-checked style rules. The host model does the reading; MaLiang only
+validates and binds it.
 
 ### Art direction intake
 

@@ -9,7 +9,8 @@ from PIL import Image
 
 from maliang_art import cli
 from maliang_art.concept import (
-    apply_decision, chain_findings, draft_identity_findings, markers_to_identity, palette_findings, review_sheet,
+    apply_decision, chain_findings, draft_identity_findings, markers_to_identity, palette_findings, reading_to_markers,
+    reading_to_style_rules, review_sheet,
 )
 from maliang_art.records import RecordValidationError, check_tree, infer_schema, validate_record
 
@@ -316,3 +317,162 @@ def test_decision_from_answers_records_free_text_and_rejects_contradictions():
     with pytest.raises(RecordValidationError):
         decision_from_answers({**ok, "style": ["typo"], "decision": ["rejected"]}, form)
     assert decision_from_answers({**ok, "style": ["ink-line"], "decision": ["rejected"]}, form)[0] == "rejected"
+
+
+def reading(status="confirmed", origin="own-concept", borrowing="identity"):
+    value = {
+        "schemaVersion": 1, "readingId": "hero-reading", "characterId": "hero",
+        "source": {"image": {"path": "concept/base.png", "sha256": "a" * 64}, "origin": origin},
+        "borrowing": borrowing, "status": status,
+        "findings": [
+            {"id": "two-tone", "category": "identity-feature", "markerCategory": "species-silhouette",
+             "description": "black and white coat", "provenance": "human-confirmed"},
+            {"id": "coat-white", "category": "palette-role", "hex": "#F2F0EA",
+             "description": "main coat color", "provenance": "host-model-observed"},
+            {"id": "ink-line", "category": "linework", "description": "Fine ink line first",
+             "provenance": "host-model-observed"},
+        ],
+    }
+    if origin == "own-concept":
+        value["source"]["conceptId"] = "hero-base"
+    if borrowing == "style-only":
+        value["findings"] = value["findings"][1:]
+    return value
+
+
+def test_reading_schema_and_runtime_accept_valid_records():
+    schema = json.loads((SCHEMAS / "art-reading.schema.json").read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(schema)
+    for value in (reading(), reading("draft"), reading(origin="external-reference", borrowing="style-only")):
+        Draft202012Validator(schema).validate(value)
+        assert infer_schema(value) == "art-reading"
+        assert validate_record(value) == value
+    linked = markers()
+    linked["readingIds"] = ["hero-reading"]
+    Draft202012Validator(json.loads((SCHEMAS / "identity-markers.schema.json").read_text(encoding="utf-8"))).validate(linked)
+    validate_record(linked, "identity-markers")
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda v: v.update(borrowing="style-only"),
+    lambda v: v["source"].update(origin="external-reference"),
+    lambda v: v["findings"][0].update(provenance="host-model-observed"),
+    lambda v: v["findings"][1].pop("hex"),
+    lambda v: v["findings"][0].pop("markerCategory"),
+    lambda v: v["findings"][2].update(category="vibe"),
+    lambda v: v["source"].pop("conceptId"),
+    lambda v: v["findings"].append(copy.deepcopy(v["findings"][0])),
+])
+def test_reading_rejects_borrowed_identity_unconfirmed_identity_and_bad_shapes(mutate):
+    value = reading()
+    mutate(value)
+    with pytest.raises(RecordValidationError):
+        validate_record(value, "art-reading")
+
+
+def test_reading_verifies_source_hash(tmp_path):
+    (tmp_path / "concept").mkdir()
+    (tmp_path / "concept" / "base.png").write_bytes(b"synthetic")
+    with pytest.raises(RecordValidationError, match="hash mismatch"):
+        validate_record(reading(), root=tmp_path, verify=True)
+
+
+def test_frozen_markers_require_confirmed_identity_readings():
+    linked = markers()
+    linked["readingIds"] = ["hero-reading"]
+    assert chain_findings([concept(), reading(), linked]) == []
+    assert any("not confirmed" in f for f in chain_findings([concept(), reading("draft"), linked]))
+    assert any("unknown reading" in f for f in chain_findings([concept(), linked]))
+    style_only = reading(origin="external-reference", borrowing="style-only")
+    assert any("style-only" in f for f in chain_findings([concept(), style_only, linked]))
+    linked["status"] = "draft"
+    assert chain_findings([concept(), reading("draft"), linked]) == []
+
+
+def test_reading_flows_into_markers_style_rules_and_draft():
+    drafted = reading_to_markers(reading(), markers_id="hero-markers", concept_ids=["hero-base"])
+    assert drafted["status"] == "draft" and drafted["readingIds"] == ["hero-reading"]
+    assert [m["id"] for m in drafted["markers"]] == ["two-tone"]
+    assert drafted["markers"][0]["category"] == "species-silhouette"
+    assert drafted["palette"] == [{"role": "coat-white", "hex": "#F2F0EA"}]
+    validate_record(drafted, "identity-markers")
+    rules = reading_to_style_rules(reading())
+    assert rules == [{"id": "ink-line", "instruction": "Fine ink line first", "method": "human", "required": True}]
+    drafted["markers"][0]["capsuleTranslation"] = "two-tone-coat"
+    identity = markers_to_identity(drafted, species="synthetic bear")
+    assert draft_identity_findings({"identity": identity}, drafted) == []
+    with pytest.raises(RecordValidationError):
+        reading_to_markers(reading(origin="external-reference", borrowing="style-only"),
+                           markers_id="x", concept_ids=["hero-base"])
+
+
+def _linked():
+    value = markers()
+    value["readingIds"] = ["hero-reading"]
+    return value
+
+
+@pytest.mark.parametrize("mutate,expected", [
+    (lambda r, c, m: r.update(characterId="other"), "belongs to character other"),
+    (lambda r, c, m: r["source"].update(conceptId="hero-alt"), "not cited by these markers"),
+    (lambda r, c, m: c.update(concept("pending")), "not approved"),
+    (lambda r, c, m: r["source"]["image"].update(sha256="b" * 64), "different image"),
+])
+def test_frozen_markers_check_reading_matches_character_concept_and_image(mutate, expected):
+    r, c, m = reading(), concept(), _linked()
+    assert chain_findings([c, r, m]) == []
+    mutate(r, c, m)
+    assert any(expected in f for f in chain_findings([c, r, m]))
+    m["status"] = "draft"
+    assert not any(expected in f for f in chain_findings([c, r, m]))
+
+
+def test_frozen_markers_reject_placeholder_translation_and_no_required_marker():
+    drafted = reading_to_markers(reading(), markers_id="hero-markers", concept_ids=["hero-base"])
+    validate_record(drafted, "identity-markers")
+    frozen = {**drafted, "status": "frozen"}
+    with pytest.raises(RecordValidationError, match="placeholder"):
+        validate_record(frozen, "identity-markers")
+    frozen["markers"][0]["capsuleTranslation"] = "two-tone-coat"
+    with pytest.raises(RecordValidationError, match="required"):
+        validate_record(frozen, "identity-markers")
+    frozen["markers"][0]["required"] = True
+    validate_record(frozen, "identity-markers")
+
+
+def test_reading_to_markers_explains_missing_identity_or_palette():
+    no_identity = reading()
+    no_identity["findings"] = [f for f in no_identity["findings"] if f["category"] != "identity-feature"]
+    with pytest.raises(RecordValidationError, match="no identity features"):
+        reading_to_markers(no_identity, markers_id="m", concept_ids=["hero-base"])
+    no_palette = reading()
+    no_palette["findings"] = [f for f in no_palette["findings"] if f["category"] != "palette-role"]
+    with pytest.raises(RecordValidationError, match="no palette roles"):
+        reading_to_markers(no_palette, markers_id="m", concept_ids=["hero-base"])
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda v: v["source"].pop("conceptId"),
+    lambda v: v["source"].update(origin="external-reference"),
+    lambda v: v["findings"][0].pop("markerCategory"),
+    lambda v: v["findings"][1].pop("hex"),
+])
+def test_reading_schema_enforces_conditional_fields(mutate):
+    schema = json.loads((SCHEMAS / "art-reading.schema.json").read_text(encoding="utf-8"))
+    value = reading()
+    mutate(value)
+    assert not Draft202012Validator(schema).is_valid(value)
+
+
+@pytest.mark.parametrize("record,mutate", [
+    (reading, lambda v: v["source"].update(origin=["own-concept"])),
+    (reading, lambda v: v["findings"][2].update(category=["mood"])),
+    (style, lambda v: v.update(track=["concept"])),
+    (markers, lambda v: v["markers"][0].update(category=["mark"])),
+])
+def test_unhashable_enum_values_are_reported_not_raised(record, mutate, tmp_path):
+    value = record()
+    mutate(value)
+    (tmp_path / "record.json").write_text(json.dumps(value), encoding="utf-8")
+    count, errors = check_tree(tmp_path)
+    assert count == 1 and len(errors) == 1

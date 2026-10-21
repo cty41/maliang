@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Art reading v1",
+  "description": "Design requirements a host model or human read from one bound source image, with what may be borrowed and who confirmed each finding.",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "readingId", "characterId", "source", "borrowing", "status", "findings"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "readingId": {"type": "string", "minLength": 1},
+    "characterId": {"type": "string", "minLength": 1},
+    "source": {"type": "object", "additionalProperties": false, "required": ["image", "origin"], "properties": {
+      "image": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }},
+      "origin": {"enum": ["own-concept", "external-reference"]},
+      "conceptId": {"type": "string", "minLength": 1, "description": "Required for own-concept sources."}
+    }},
+    "borrowing": {"enum": ["identity", "style-only"], "description": "External references are style-only."},
+    "status": {"enum": ["draft", "confirmed"]},
+    "findings": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false,
+      "required": ["id", "category", "description", "provenance"], "properties": {
+      "id": {"type": "string", "minLength": 1},
+      "category": {"enum": ["identity-feature", "palette-role", "silhouette", "proportion", "linework",
+                            "shading-lighting", "material", "composition", "mood"]},
+      "description": {"type": "string", "minLength": 1},
+      "provenance": {"enum": ["host-model-observed", "human-confirmed"]},
+      "markerCategory": {"enum": ["species-silhouette", "costume-color", "weapon", "accessory", "mark", "transformation"],
+        "description": "Required for identity-feature findings."},
+      "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "Required for palette-role findings."}
+    }, "allOf": [
+      {"if": {"properties": {"category": {"const": "identity-feature"}}}, "then": {"required": ["markerCategory"]}},
+      {"if": {"properties": {"category": {"const": "palette-role"}}}, "then": {"required": ["hex"]}}
+    ]}}
+  },
+  "allOf": [
+    {"if": {"properties": {"source": {"properties": {"origin": {"const": "own-concept"}}}}},
+     "then": {"properties": {"source": {"required": ["conceptId"]}}}},
+    {"if": {"properties": {"source": {"properties": {"origin": {"const": "external-reference"}}}}},
+     "then": {"properties": {"borrowing": {"const": "style-only"}}}}
+  ]
+}

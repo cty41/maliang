@@ -81,7 +81,7 @@ production CLI 的 prepare，再用 Pillow 创建 16×16 合成色块并绑定�
 
 1. 写 `concept-style-guide`，再为每个形态写一份 `character-concept`，初始状态为 pending、image 为 null。
 2. 用户单独授权后生成原画。运行 `python -m maliang_art concept review <记录目录> --concept <id> --format questions` 输出三道确认题（风格检查多选、认人特征多选、结论单选），agent 交给提问工具让用户作答；没有提问工具时，去掉 `--format questions` 输出 Markdown 确认单，原样贴到会话里。认人特征按 `forms` 只列当前形态适用的项。结论选“需修改”时按 rejected 记录，不满足项写入 `--note`。用户作答之后，agent 才能运行 `python -m maliang_art concept approve <concept.json> --decision approved --image <图片路径> --root <项目根>`。审批人自动取 git 的 user.name 和 user.email，取不到时用操作系统登录名，来源记录在 `reviewerSource` 字段里。用户没有明确回复时，不执行 approve。
-3. 从定稿原画提炼 `identity-markers`，冻结为 frozen；每个特征都要写明 `capsuleTranslation`。
+3. 从定稿原画提炼 `identity-markers`，冻结为 frozen；每个特征都要写明 `capsuleTranslation`。提炼时先写一份 `art-reading`：绑定原图路径和哈希，宿主模型看出来的条目记为 `host-model-observed`，用户确认过的才改为 `human-confirmed`。身份类条目全部经用户确认后，reading 才能标为 confirmed，再用 `reading_to_markers` 起草特征清单，并在 `readingIds` 里引用它。外部参考图（照片、他人作品截图）只能写成 `style-only` 的 reading，只借风格，不借身份。
 4. 第 1 节的 draft 中，`identity` 由特征清单生成。不要把原画当参考图输入胶囊资产。
 5. 半身头像和宣传图写成 `derived-usage`，同样需要人工审批。
 

@@ -189,12 +189,22 @@ AskQuestion JSON：风格检查和认人特征是多选题“哪些不满足”�
 
 ```python
 from maliang_art.concept import draft_identity_findings, markers_to_identity, palette_findings
+from maliang_art.concept import reading_to_markers, reading_to_style_rules
 ```
 
 `markers_to_identity` 用每个特征的 `capsuleTranslation` 生成 sprite-slice draft 的
 `identity` 块；`draft_identity_findings` 报告 draft 缺少的必须保留特征；
 `palette_findings` 把调用方提供的不透明像素颜色计数与特征色板比较。这些函数都不生图，
 也不判断“像不像”。合成示例见 `examples/art-pilot/characters/concept-demo`。
+
+`art-reading` 记录从一张已绑定哈希的原图里读出了什么：身份特征、配色角色，以及风格条目
+（剪影、比例、描线、明暗光照、材质、构图、气质），每条标明是 `host-model-observed`（宿主模型观察）
+还是 `human-confirmed`（人工确认）。标为 confirmed 的 reading 要求身份特征全部经人工确认；
+外部参考必须是 `style-only`，不能带身份特征。带 `readingIds` 的 frozen 特征清单只能引用已确认的
+身份类 reading，角色必须一致；自有原画的 reading 还必须对应清单引用的、已审批的那张原画图片。
+`reading_to_markers` 起草特征清单，`capsuleTranslation` 仍由人填写；冻结时会拒绝留着占位文字的清单，
+并要求至少一条必须保留的特征；
+`reading_to_style_rules` 起草由人工检查的风格规则。看图由宿主模型完成，马良只做校验和绑定。
 
 ### 美术方向问询
 

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "readingId": "concept-demo-base-reading",
+  "characterId": "concept-demo",
+  "source": {
+    "image": {"path": "concept/base.png", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+    "origin": "own-concept",
+    "conceptId": "concept-demo-base"
+  },
+  "borrowing": "identity",
+  "status": "draft",
+  "findings": [
+    {"id": "grey-white-body", "category": "identity-feature", "markerCategory": "species-silhouette", "description": "Grey back and wings, white neck and face.", "provenance": "host-model-observed"},
+    {"id": "long-beak", "category": "identity-feature", "markerCategory": "species-silhouette", "description": "Long pointed yellow beak.", "provenance": "host-model-observed"},
+    {"id": "main", "category": "palette-role", "hex": "#C9D1D6", "description": "Grey body color.", "provenance": "host-model-observed"},
+    {"id": "fine-ink-line", "category": "linework", "description": "Fine even ink line defines every form before color.", "provenance": "host-model-observed"}
+  ]
+}

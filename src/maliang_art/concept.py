@@ -14,6 +14,10 @@ _HEX = re.compile(r"#[0-9A-Fa-f]{6}")
 _APPROVAL_STATES = {"pending", "approved", "rejected"}
 _REVIEWER_SOURCES = {"git-config", "os-user", "manual"}
 _MARKER_CATEGORIES = {"species-silhouette", "costume-color", "weapon", "accessory", "mark", "transformation"}
+_STYLE_CATEGORIES = {"silhouette", "proportion", "linework", "shading-lighting", "material", "composition", "mood"}
+_READING_CATEGORIES = {"identity-feature", "palette-role"} | _STYLE_CATEGORIES
+_PROVENANCE = {"host-model-observed", "human-confirmed"}
+_TRANSLATION_PLACEHOLDER = "TODO:"
 
 
 def _fields(value: Any, name: str, required: set[str], optional: set[str] = frozenset()) -> dict[str, Any]:
@@ -40,6 +44,10 @@ def _texts(value: Any, name: str, *, minimum: int = 0, unique: bool = False) -> 
     return items
 
 
+def _is_choice(value: Any, allowed: Iterable[str]) -> bool:
+    return isinstance(value, str) and value in allowed
+
+
 def _version(value: Mapping[str, Any]) -> None:
     if value.get("schemaVersion") != 1 or isinstance(value.get("schemaVersion"), bool):
         raise RecordValidationError("schemaVersion must be 1")
@@ -47,9 +55,9 @@ def _version(value: Mapping[str, Any]) -> None:
 
 def _approval(value: Any, name: str) -> dict[str, Any]:
     approval = _fields(value, name, {"status"}, {"reviewer", "reviewerSource", "reviewedAt", "note"})
-    if approval["status"] not in _APPROVAL_STATES:
+    if not _is_choice(approval["status"], _APPROVAL_STATES):
         raise RecordValidationError(f"{name}.status must be one of {sorted(_APPROVAL_STATES)}")
-    if "reviewerSource" in approval and approval["reviewerSource"] not in _REVIEWER_SOURCES:
+    if "reviewerSource" in approval and not _is_choice(approval["reviewerSource"], _REVIEWER_SOURCES):
         raise RecordValidationError(f"{name}.reviewerSource must be one of {sorted(_REVIEWER_SOURCES)}")
     if approval["status"] == "pending":
         if {"reviewer", "reviewerSource", "reviewedAt"} & set(approval):
@@ -66,7 +74,7 @@ def validate_style_guide(value: Any) -> dict[str, Any]:
     record = _fields(value, "concept-style-guide", {"schemaVersion", "styleId", "track", "framing", "references", "rules"})
     _version(record)
     _text(record["styleId"], "styleId")
-    if record["track"] not in {"concept", "promo"}:
+    if not _is_choice(record["track"], {"concept", "promo"}):
         raise RecordValidationError("track must be concept or promo")
     framing = _fields(record["framing"], "framing", {"subject", "body", "background"})
     for key, item in framing.items():
@@ -84,7 +92,7 @@ def validate_style_guide(value: Any) -> dict[str, Any]:
         rule = _fields(rule, f"rules[{i}]", {"id", "instruction", "method", "required"})
         _text(rule["id"], f"rules[{i}].id")
         _text(rule["instruction"], f"rules[{i}].instruction")
-        if rule["method"] not in {"deterministic", "human"}:
+        if not _is_choice(rule["method"], {"deterministic", "human"}):
             raise RecordValidationError(f"rules[{i}].method must be deterministic or human")
         if not isinstance(rule["required"], bool):
             raise RecordValidationError(f"rules[{i}].required must be boolean")
@@ -117,13 +125,15 @@ def validate_concept(value: Any, *, root: Any = None, verify: bool = False) -> d
 
 
 def validate_markers(value: Any) -> dict[str, Any]:
-    record = _fields(value, "identity-markers", {"schemaVersion", "markersId", "characterId", "status", "conceptIds", "markers", "palette", "tolerance"})
+    record = _fields(value, "identity-markers", {"schemaVersion", "markersId", "characterId", "status", "conceptIds", "markers", "palette", "tolerance"}, {"readingIds"})
     _version(record)
     _text(record["markersId"], "markersId")
     _text(record["characterId"], "characterId")
-    if record["status"] not in {"draft", "frozen"}:
+    if not _is_choice(record["status"], {"draft", "frozen"}):
         raise RecordValidationError("status must be draft or frozen")
     _texts(record["conceptIds"], "conceptIds", minimum=1, unique=True)
+    if "readingIds" in record:
+        _texts(record["readingIds"], "readingIds", minimum=1, unique=True)
     if not isinstance(record["markers"], list) or not record["markers"]:
         raise RecordValidationError("markers must list at least one marker")
     ids = []
@@ -134,12 +144,17 @@ def validate_markers(value: Any) -> dict[str, Any]:
             _texts(marker["forms"], f"markers[{i}].forms", minimum=1, unique=True)
         _text(marker["description"], f"markers[{i}].description")
         _text(marker["capsuleTranslation"], f"markers[{i}].capsuleTranslation")
-        if marker["category"] not in _MARKER_CATEGORIES:
+        if not _is_choice(marker["category"], _MARKER_CATEGORIES):
             raise RecordValidationError(f"markers[{i}].category must be one of {sorted(_MARKER_CATEGORIES)}")
         if not isinstance(marker["required"], bool):
             raise RecordValidationError(f"markers[{i}].required must be boolean")
     if len(set(ids)) != len(ids):
         raise RecordValidationError("marker ids must be unique")
+    if record["status"] == "frozen":
+        if any(m["capsuleTranslation"].startswith(_TRANSLATION_PLACEHOLDER) for m in record["markers"]):
+            raise RecordValidationError("frozen markers still contain a placeholder capsuleTranslation")
+        if not any(m["required"] for m in record["markers"]):
+            raise RecordValidationError("frozen markers need at least one required marker")
     if not isinstance(record["palette"], list) or not record["palette"]:
         raise RecordValidationError("palette must list at least one color")
     for i, color in enumerate(record["palette"]):
@@ -153,12 +168,85 @@ def validate_markers(value: Any) -> dict[str, Any]:
     return dict(value)
 
 
+def validate_reading(value: Any, *, root: Any = None, verify: bool = False) -> dict[str, Any]:
+    record = _fields(value, "art-reading", {"schemaVersion", "readingId", "characterId", "source", "borrowing", "status", "findings"})
+    _version(record)
+    _text(record["readingId"], "readingId")
+    _text(record["characterId"], "characterId")
+    source = _fields(record["source"], "source", {"image", "origin"}, {"conceptId"})
+    validate_artifact(source["image"], root=root, verify=verify)
+    if not _is_choice(source["origin"], {"own-concept", "external-reference"}):
+        raise RecordValidationError("source.origin must be own-concept or external-reference")
+    if source["origin"] == "own-concept":
+        _text(source.get("conceptId"), "source.conceptId")
+    if not _is_choice(record["borrowing"], {"identity", "style-only"}):
+        raise RecordValidationError("borrowing must be identity or style-only")
+    if source["origin"] == "external-reference" and record["borrowing"] != "style-only":
+        raise RecordValidationError("an external reference may only be borrowed style-only")
+    if not _is_choice(record["status"], {"draft", "confirmed"}):
+        raise RecordValidationError("status must be draft or confirmed")
+    if not isinstance(record["findings"], list) or not record["findings"]:
+        raise RecordValidationError("findings must list at least one finding")
+    ids = []
+    for i, finding in enumerate(record["findings"]):
+        finding = _fields(finding, f"findings[{i}]", {"id", "category", "description", "provenance"}, {"markerCategory", "hex"})
+        ids.append(_text(finding["id"], f"findings[{i}].id"))
+        _text(finding["description"], f"findings[{i}].description")
+        category = finding["category"]
+        if not _is_choice(category, _READING_CATEGORIES):
+            raise RecordValidationError(f"findings[{i}].category must be one of {sorted(_READING_CATEGORIES)}")
+        if not _is_choice(finding["provenance"], _PROVENANCE):
+            raise RecordValidationError(f"findings[{i}].provenance must be one of {sorted(_PROVENANCE)}")
+        if ("markerCategory" in finding) != (category == "identity-feature"):
+            raise RecordValidationError(f"findings[{i}]: markerCategory is required for, and only for, identity-feature")
+        if category == "identity-feature":
+            if not _is_choice(finding["markerCategory"], _MARKER_CATEGORIES):
+                raise RecordValidationError(f"findings[{i}].markerCategory must be one of {sorted(_MARKER_CATEGORIES)}")
+            if record["borrowing"] == "style-only":
+                raise RecordValidationError(f"findings[{i}]: a style-only reading cannot carry identity features")
+            if record["status"] == "confirmed" and finding["provenance"] != "human-confirmed":
+                raise RecordValidationError(f"findings[{i}]: a confirmed reading needs human-confirmed identity features")
+        if ("hex" in finding) != (category == "palette-role"):
+            raise RecordValidationError(f"findings[{i}]: hex is required for, and only for, palette-role")
+        if "hex" in finding and (not isinstance(finding["hex"], str) or not _HEX.fullmatch(finding["hex"])):
+            raise RecordValidationError(f"findings[{i}].hex must be #RRGGBB")
+    if len(set(ids)) != len(ids):
+        raise RecordValidationError("finding ids must be unique")
+    return dict(value)
+
+
+def reading_to_markers(reading: Mapping[str, Any], *, markers_id: str, concept_ids: list[str],
+                       tolerance: float = 24) -> dict[str, Any]:
+    """Draft identity markers from a reading; a human writes each capsuleTranslation before freezing."""
+    if reading["borrowing"] != "identity":
+        raise RecordValidationError(f"{reading['readingId']} is style-only and cannot supply identity markers")
+    findings = reading["findings"]
+    for category, label in (("identity-feature", "identity features"), ("palette-role", "palette roles")):
+        if not any(f["category"] == category for f in findings):
+            raise RecordValidationError(f"{reading['readingId']} has no {label} to draft markers from")
+    return {
+        "schemaVersion": 1, "markersId": markers_id, "characterId": reading["characterId"], "status": "draft",
+        "conceptIds": list(concept_ids), "readingIds": [reading["readingId"]],
+        "markers": [{"id": f["id"], "description": f["description"], "category": f["markerCategory"],
+                     "required": False, "capsuleTranslation": f"{_TRANSLATION_PLACEHOLDER} human writes the capsule translation"}
+                    for f in findings if f["category"] == "identity-feature"],
+        "palette": [{"role": f["id"], "hex": f["hex"]} for f in findings if f["category"] == "palette-role"],
+        "tolerance": tolerance,
+    }
+
+
+def reading_to_style_rules(reading: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Draft human-checked style rules for a concept style guide or a draft's familyRules."""
+    return [{"id": f["id"], "instruction": f["description"], "method": "human", "required": True}
+            for f in reading["findings"] if f["category"] in _STYLE_CATEGORIES]
+
+
 def validate_usage(value: Any) -> dict[str, Any]:
     record = _fields(value, "derived-usage", {"schemaVersion", "usageId", "conceptId", "kind", "purpose", "approval"}, {"crop"})
     _version(record)
     for key in ("usageId", "conceptId", "purpose"):
         _text(record[key], key)
-    if record["kind"] not in {"portrait-bust", "promo"}:
+    if not _is_choice(record["kind"], {"portrait-bust", "promo"}):
         raise RecordValidationError("kind must be portrait-bust or promo")
     if record["kind"] == "portrait-bust" and "crop" not in record:
         raise RecordValidationError("portrait-bust requires crop")
@@ -172,18 +260,51 @@ def validate_usage(value: Any) -> dict[str, Any]:
     return dict(value)
 
 
+def _reading_match_findings(markers: Mapping[str, Any], reading: Mapping[str, Any],
+                            concepts: Mapping[str, Mapping[str, Any]]) -> list[str]:
+    prefix = f"{markers['markersId']}: reading {reading['readingId']}"
+    findings = []
+    if reading["characterId"] != markers["characterId"]:
+        findings.append(f"{prefix} belongs to character {reading['characterId']}")
+    source = reading["source"]
+    if source["origin"] != "own-concept":
+        return findings
+    concept_id = source["conceptId"]
+    concept = concepts.get(concept_id)
+    if concept_id not in markers["conceptIds"]:
+        findings.append(f"{prefix} reads concept {concept_id} that is not cited by these markers")
+    if concept is None or concept["approval"]["status"] != "approved":
+        findings.append(f"{prefix} reads concept {concept_id} that is not approved")
+    elif concept["image"]["sha256"] != source["image"]["sha256"]:
+        findings.append(f"{prefix} read a different image than approved concept {concept_id}")
+    return findings
+
+
 def chain_findings(records: Iterable[Mapping[str, Any]]) -> list[str]:
     """Cross-record findings for already validated concept-chain records."""
     concepts: dict[str, Mapping[str, Any]] = {}
+    readings: dict[str, Mapping[str, Any]] = {}
     others: list[Mapping[str, Any]] = []
     for record in records:
         if "conceptId" in record and "form" in record:
             concepts[record["conceptId"]] = record
+        elif "readingId" in record:
+            readings[record["readingId"]] = record
         else:
             others.append(record)
     findings: list[str] = []
     for record in others:
         if "markersId" in record:
+            for reading_id in record.get("readingIds", []):
+                reading = readings.get(reading_id)
+                if reading is None:
+                    findings.append(f"{record['markersId']}: unknown reading {reading_id}")
+                elif record["status"] == "frozen" and reading["status"] != "confirmed":
+                    findings.append(f"{record['markersId']}: frozen markers cite reading {reading_id} that is not confirmed")
+                elif record["status"] == "frozen" and reading["borrowing"] != "identity":
+                    findings.append(f"{record['markersId']}: frozen markers cite style-only reading {reading_id}")
+                elif record["status"] == "frozen":
+                    findings.extend(_reading_match_findings(record, reading, concepts))
             for concept_id in record["conceptIds"]:
                 concept = concepts.get(concept_id)
                 if concept is None:

@@ -10,6 +10,8 @@
     "characterId": {"type": "string", "minLength": 1},
     "status": {"enum": ["draft", "frozen"]},
     "conceptIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "readingIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1},
+      "description": "Art readings these markers were drafted from; frozen markers require confirmed identity readings."},
     "markers": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false,
       "required": ["id", "description", "category", "required", "capsuleTranslation"], "properties": {
       "id": {"type": "string", "minLength": 1},

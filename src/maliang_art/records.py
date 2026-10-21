@@ -21,8 +21,9 @@ _SCHEMA_ALIASES = {
     "character-concept": "character-concept",
     "identity-markers": "identity-markers",
     "derived-usage": "derived-usage",
+    "art-reading": "art-reading",
 }
-_CONCEPT_KINDS = {"concept-style-guide", "character-concept", "identity-markers", "derived-usage"}
+_CONCEPT_KINDS = {"concept-style-guide", "character-concept", "identity-markers", "derived-usage", "art-reading"}
 
 
 class RecordValidationError(MaLiangError):
@@ -97,6 +98,8 @@ def infer_schema(record: Any) -> str:
         return "identity-markers"
     if "usageId" in record:
         return "derived-usage"
+    if "readingId" in record:
+        return "art-reading"
     raise RecordValidationError("cannot infer record schema; pass --schema")
 
 
@@ -123,9 +126,11 @@ def validate_record(record: Any, schema: str = "auto", *, root: str | Path | Non
             return validate_delivery(value, root=root, verify=verify)
         return validate_invocation(value) if kind == "invocation" else validate_failure(value)
     if kind in _CONCEPT_KINDS:
-        from .concept import validate_concept, validate_markers, validate_style_guide, validate_usage
+        from .concept import validate_concept, validate_markers, validate_reading, validate_style_guide, validate_usage
         if kind == "character-concept":
             return validate_concept(value, root=root, verify=verify)
+        if kind == "art-reading":
+            return validate_reading(value, root=root, verify=verify)
         return {"concept-style-guide": validate_style_guide, "identity-markers": validate_markers,
                 "derived-usage": validate_usage}[kind](value)
     raise RecordValidationError(f"unknown schema: {kind}")
