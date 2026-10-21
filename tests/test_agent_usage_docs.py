@@ -335,6 +335,15 @@ def test_user_workspace_is_ignored_by_git():
     assert "/work/" in text(ROOT / ".gitignore").splitlines()
 
 
+def test_skill_triggers_on_conversation_intent_and_announces_route():
+    frontmatter, body = text(SKILL).split("---", 2)[1:]
+    description = yaml.safe_load(frontmatter)["description"]
+    assert "earlier in the conversation" in description
+    assert "earlier in this conversation" in body
+    assert "Before calling any image tool" in body
+    assert "never switch silently to a plain image tool" in body
+
+
 def test_skill_routes_concept_track_and_camera_modes():
     skill = text(ROOT / "skills/maliang-art/SKILL.md")
     assert "concept review" in skill and "--format questions" in skill

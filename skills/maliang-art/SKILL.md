@@ -1,6 +1,6 @@
 ---
 name: maliang-art
-description: "Use when the user explicitly asks to use MaLiang / 马良 to prepare, make, edit, or review game-art assets. Validate and freeze a brief, coordinate authorized host image tools, and gate adoption on exact-candidate technical and real human review. Do not use for developing MaLiang, general art discussion, or unrelated image requests."
+description: "Use when the user asks to use MaLiang / 马良 to prepare, make, edit, or review game-art assets, including image requests after they said earlier in the conversation that they want to use or test MaLiang. Validate and freeze a brief, coordinate authorized host image tools, and gate adoption on exact-candidate technical and real human review. Do not use for developing MaLiang, general art discussion, or unrelated image requests."
 ---
 
 # Make game art with MaLiang
@@ -35,11 +35,19 @@ These are repository-root paths, not paths relative to this installed skill.
 - “Review this MaLiang candidate for adoption” → display the exact image, check its
   technical results, obtain a real human decision, and apply the adoption gates.
 
+- “确认能访问马良” followed by “画一个小橙子程序员” → the user stated MaLiang intent
+  earlier in this conversation, so the drawing request uses this workflow even
+  though it does not name MaLiang again.
+
 Do not trigger for “fix MaLiang's compiler”: use the checkout's development guidance
 instead, with no generation. Ordinary art discussion and unrelated image requests
 also do not activate this workflow.
 
 ## Workflow
+
+Before calling any image tool in a conversation where MaLiang is available, say
+in one sentence whether this request goes through MaLiang or not and, if not,
+why. Then follow that route; never switch silently to a plain image tool.
 
 ### 1. Locate the checkout and environment
 
