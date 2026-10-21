@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "markersId": "concept-demo-markers",
+  "characterId": "concept-demo",
+  "status": "draft",
+  "conceptIds": ["concept-demo-base", "concept-demo-alt"],
+  "markers": [
+    {"id": "grey-white-body", "description": "Grey back and wings, white neck and face.", "category": "species-silhouette", "required": true, "capsuleTranslation": "grey-white-body-blocks"},
+    {"id": "long-beak", "description": "Long pointed yellow beak.", "category": "species-silhouette", "required": true, "capsuleTranslation": "long-beak-wedge"},
+    {"id": "crest-plume", "description": "Thin black crest plume behind the head.", "category": "mark", "required": true, "capsuleTranslation": "black-crest-plume"},
+    {"id": "staff", "description": "Short wooden staff.", "category": "weapon", "required": false, "capsuleTranslation": "staff-stub"},
+    {"id": "wing-span", "description": "Wings spread wide with dark flight feathers.", "category": "transformation", "required": false, "capsuleTranslation": "wing-span-flaps", "forms": ["alt-form"]}
+  ],
+  "palette": [
+    {"role": "main", "hex": "#C9D1D6"},
+    {"role": "secondary", "hex": "#2E3438"},
+    {"role": "accent", "hex": "#D9A441"}
+  ],
+  "tolerance": 40
+}

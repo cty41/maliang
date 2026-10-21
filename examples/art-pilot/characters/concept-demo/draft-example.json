@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "species": "synthetic-heron",
+    "features": ["grey-white-body-blocks", "long-beak-wedge", "black-crest-plume", "staff-stub", "wing-span-flaps"],
+    "priority": ["grey-white-body-blocks", "long-beak-wedge", "black-crest-plume"],
+    "forbiddenMirror": []
+  },
+  "topology": {
+    "core": "capsule-torso",
+    "parts": [
+      {"id": "long-beak", "description": "long pointed yellow beak wedge on the head end of the capsule"},
+      {"id": "crest-plume", "description": "thin black crest plume trailing from the head"},
+      {"id": "staff-stub", "description": "short staff stub attached to one capsule side"},
+      {"id": "feet-pair", "description": "two thin feet on the ground line"}
+    ],
+    "prohibited": ["arms", "legs", "ink wash texture", "paper background", "photorealistic"]
+  },
+  "silhouetteClass": "capsule",
+  "visualMoment": [
+    {"view": "DR", "state": "idle", "moment": "calm upright, staff stub resting at side", "coreTransform": "idle-upright", "partChanges": []}
+  ],
+  "paletteRoles": {},
+  "targets": {},
+  "references": []
+}

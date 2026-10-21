@@ -30,6 +30,17 @@ dry-run 只核对并打印，不创建环境、安装或写锁。实际运行生
 
 sdist 仅包含 art-pilot 脚本、合成测试、中文 README.md，不包含英文 README.en.md、双语运行手册、真实图片、生产历史、本机锁或 policy。真实资产 hash / 来源审计属于仓库检查；所有行为回归使用临时合成 fixture。
 
+## 0.0 美术方向问询（需求宽泛时）
+
+需求只有一句话，比如“可爱点的动物战棋”时，先做问询，不要直接编写 draft。
+
+1. agent 先用一两句话复述自己的理解，然后运行 `python -m maliang_art intake start <目录> <intake.json> --request "<用户原话>"`。示例目录是 `intake/art-direction-catalog.json`。
+2. 反复运行 `intake next <目录> <intake.json>`，用提问工具把返回的题目发给用户。用户每回答一题，就运行一次 `intake answer`，直到结果为 done。
+3. 选到终止项（比如 3D）时，问询会停下并给出原因，不再继续。
+4. 最后运行 `intake draft`，得到风格规则和家族契约的字段草稿，以及还没决定的维度（open）。之后再进入第 1 节，或者进入 0.2 节的原画流程。
+
+问询目录是项目自己的数据，可以按需要增删。agent 只能在标为 suggestable 的维度上追加推荐选项，并且要标明这是 AI 推荐；从用户原话里预填的答案，必须先请用户确认；不能替用户作答。
+
 ## 0.1 一条命令跑通合成离线闭环
 
 前提：按上节安装当前源码及依赖，使用该环境的 Python；执行练习本身不联网、
@@ -63,6 +74,18 @@ production CLI 的 prepare，再用 Pillow 创建 16×16 合成色块并绑定�
 要再练习请改为新的 `work/art-pilot/synthetic-demo-002` 等路径。运行中断可能保留
 部分记录；同样用新目录重跑，不删除或覆盖旧证据。下面第 1–4 节是**真实项目的
 操作模板**，仍须真实输入、执行证据和人类决定，不得使用上面的合成批准替代。
+
+## 0.2 原画先行（可选）
+
+原画和游戏内资产风格差异较大时，比如水墨原画配胶囊小人，先走原画轨道：
+
+1. 写 `concept-style-guide`，再为每个形态写一份 `character-concept`，初始状态为 pending、image 为 null。
+2. 用户单独授权后生成原画。运行 `python -m maliang_art concept review <记录目录> --concept <id> --format questions` 输出三道确认题（风格检查多选、认人特征多选、结论单选），agent 交给提问工具让用户作答；没有提问工具时，去掉 `--format questions` 输出 Markdown 确认单，原样贴到会话里。认人特征按 `forms` 只列当前形态适用的项。结论选“需修改”时按 rejected 记录，不满足项写入 `--note`。用户作答之后，agent 才能运行 `python -m maliang_art concept approve <concept.json> --decision approved --image <图片路径> --root <项目根>`。审批人自动取 git 的 user.name 和 user.email，取不到时用操作系统登录名，来源记录在 `reviewerSource` 字段里。用户没有明确回复时，不执行 approve。
+3. 从定稿原画提炼 `identity-markers`，冻结为 frozen；每个特征都要写明 `capsuleTranslation`。
+4. 第 1 节的 draft 中，`identity` 由特征清单生成。不要把原画当参考图输入胶囊资产。
+5. 半身头像和宣传图写成 `derived-usage`，同样需要人工审批。
+
+用 `python -m maliang_art records check <记录目录>` 检查记录。合成示例 `characters/concept-demo`（示例苍鹭，两种形态）如实停在“等待原画人工定稿”这一步。
 
 ## 1. 准备权威输入
 

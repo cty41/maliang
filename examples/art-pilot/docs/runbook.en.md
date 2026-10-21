@@ -30,6 +30,17 @@ Dry-run only checks and prints; it does not create an environment, install anyth
 
 The sdist includes only art-pilot scripts, synthetic tests, and the Chinese `README.md`; it excludes the English README, both runbooks, real images, production history, local locks, and policy. Real-asset hash/source audits belong to repository checks; all behavioral regressions use temporary synthetic fixtures.
 
+## 0.0 Art direction intake (for broad requests)
+
+When the request is a single line such as "a cute animal tactics game", run an intake before writing any draft.
+
+1. The agent restates its understanding in one or two sentences, then runs `python -m maliang_art intake start <catalog> <intake.json> --request "<user's words>"`. The sample catalog is `intake/art-direction-catalog.json`.
+2. Repeat `intake next <catalog> <intake.json>`, ask the returned questions with the question tool, and record each reply with `intake answer` until the result is done.
+3. A stop option, such as 3D, ends the intake with a reason; do not continue past it.
+4. Finish with `intake draft` to get draft style-guide and family-contract fields plus the dimensions still open. Then continue with Section 1, or with the concept track in Section 0.2.
+
+The catalog is project data and can be edited freely. The agent may add suggestions only on dimensions marked suggestable and must label them as AI suggestions; answers prefilled from the user's words need the user's confirmation; the agent never answers for the user.
+
 ## 0.1 Run a complete synthetic offline exercise with one command
 
 Prerequisite: install the current source and dependencies as above and use that environment's Python. The exercise itself does not access the network or call an image-generation service, and needs no images, login, or external credentials. Run from the repository root:
@@ -51,6 +62,18 @@ The output directory contains:
 **This is not real image generation, artistic acceptance, or human approval.** `actorType: human` and pass values only exercise the existing review protocol. The reviewer is explicitly `synthetic-fixture-human`, and the statement explicitly says no person reviewed the image. Do not copy these fixtures into real projects or treat them as real people's decisions. The color block need not satisfy bird-art requirements; pass values for artistic items are mock data, not visual judgments made by the tool.
 
 The target path must not exist, even as an empty directory. A repeated run exits nonzero and does not overwrite existing files. Use a new path such as `work/art-pilot/synthetic-demo-002` for another exercise. An interrupted run may leave partial records; rerun in a new directory rather than deleting or overwriting old evidence. Sections 1–4 below are **real-project operational templates** requiring real inputs, execution evidence, and human decisions. Synthetic approvals above cannot replace them.
+
+## 0.2 Concept art first (optional)
+
+When concept art and in-game assets differ strongly in style, for example ink concept art and capsule sprites, run the concept track first:
+
+1. Write a `concept-style-guide`, then one `character-concept` per form, starting as pending with a null image.
+2. Generate concept art only after the user separately authorizes it. Run `python -m maliang_art concept review <records-directory> --concept <id> --format questions` to print three review questions (style checks, multi-select; identity markers, multi-select; conclusion, single-select) and hand them to the question tool. Without a question tool, drop `--format questions` to print the Markdown review sheet and paste it into the conversation verbatim. Identity markers list only those whose `forms` include the current form. A "needs revision" conclusion is recorded as rejected with the unmet items in `--note`. Only after the user answers may the agent run `python -m maliang_art concept approve <concept.json> --decision approved --image <image-path> --root <project-root>`. The reviewer is taken from git user.name and user.email, falling back to the OS login name, and the source is recorded in the `reviewerSource` field. Without an explicit reply from the user, do not run approve.
+3. Extract `identity-markers` from the approved concepts and freeze them; every marker states its `capsuleTranslation`.
+4. Build the Section 1 draft `identity` from the markers. Do not feed concept art to capsule generation as a reference image.
+5. Record portrait busts and promo uses as `derived-usage`; they also need human approval.
+
+Check the records with `python -m maliang_art records check <records-directory>`. The synthetic `characters/concept-demo` example (a sample heron with two forms) honestly stops at "waiting for human concept approval".
 
 ## 1. Prepare authoritative inputs
 

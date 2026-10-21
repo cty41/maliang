@@ -36,6 +36,18 @@ class PillowImageAdapter:
         image.save(stream, format="PNG", optimize=False, compress_level=9)
         return write_immutable_bytes(root, path, stream.getvalue())
 
+    def bind_image(self, root: str | Path, relative: str) -> tuple[dict[str, str], list[int]]:
+        """Return the artifact binding and [width, height] of a contained image."""
+        import hashlib
+        import io
+        data = read_contained_bytes(root, relative)
+        try:
+            with Image.open(io.BytesIO(data)) as image:
+                size = [image.width, image.height]
+        except OSError as exc:
+            raise RecordValidationError(f"cannot read image: {relative}") from exc
+        return {"path": relative, "sha256": hashlib.sha256(data).hexdigest()}, size
+
     def open_rgba(self, path: str | Path) -> Image.Image:
         with Image.open(path) as image:
             return image.convert("RGBA")

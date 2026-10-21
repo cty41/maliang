@@ -169,6 +169,45 @@ from maliang_art.workflow import validate_invocation, validate_delivery, validat
 JSON/Pillow 适配器位于 `maliang_art.adapters`。
 带版本的 JSON Schema 随包提供，位于 `schemas/v1/`。
 
+### 原画与认人特征
+
+原画可以和游戏内资产用不同风格，例如水墨原画配胶囊小人。两者之间由四种记录连接：
+`concept-style-guide`、`character-concept`、`identity-markers`，以及
+`derived-usage`（半身头像或宣传图）。`records check` 会校验这些记录，并报告跨记录问题：
+状态为 frozen 的认人特征必须引用已审批的原画；半身头像要求原画已审批且有图，
+裁切框不能超出原画尺寸。
+
+`concept review <记录目录> --concept <id>` 会输出一份 Markdown 确认单，列出图片、
+每条人工风格检查项、每个认人特征，以及结论选项。加 `--format questions` 时输出同样内容的
+AskQuestion JSON：风格检查和认人特征是多选题“哪些不满足”，末尾是“全部满足”和“有其他问题”；
+结论是单选（通过、不通过、需修改）。带 `forms` 的特征只在对应形态出现。`concept.decision_from_answers`
+负责映射答案，包括 `other` 下的自填文字：勾了不满足项或写了其他问题却选通过会报错；不通过和“需修改”
+都按 rejected 记录，不满足项和自填文字写入备注。传入题目时，题目里没有的选项 id 会报错。`concept approve <记录.json> --decision approved|rejected`
+用来记录结论：可以用 `--image` 和 `--root` 绑定图片；审批人自动取 git 的 `user.name` 和 `user.email`，
+取不到时用操作系统登录名，来源记录在 `reviewerSource` 字段里。agent 只有在用户已经在会话里
+明确回复确认单之后，才能执行 approve。
+
+```python
+from maliang_art.concept import draft_identity_findings, markers_to_identity, palette_findings
+```
+
+`markers_to_identity` 用每个特征的 `capsuleTranslation` 生成 sprite-slice draft 的
+`identity` 块；`draft_identity_findings` 报告 draft 缺少的必须保留特征；
+`palette_findings` 把调用方提供的不透明像素颜色计数与特征色板比较。这些函数都不生图，
+也不判断“像不像”。合成示例见 `examples/art-pilot/characters/concept-demo`。
+
+### 美术方向问询
+
+需求宽泛时，用 `intake start|next|answer|draft` 按项目自己的问询目录（`art-direction-catalog` schema）
+逐轮提问。`next` 输出下一轮题目，格式可直接交给提问工具：题目按“后改代价从高到低”排序，
+只包含前置条件已经满足的维度，每个选项都写明后果和风险。`answer` 记录选项或文字、来源
+（`catalog-option`、`ai-suggested-option`、`user-text` 或 `ai-inferred-confirmed`），
+以及当时实际展示的选项。固定维度拒绝 AI 推荐的选项；选到终止项时问询结束。闸门题（`gate: true`，
+即含终止项或后续题目依赖它的题）拒绝纯 `user-text`：要把用户的话对应到某个选项，经确认后记为
+`ai-inferred-confirmed`。`draft`
+把已选项映射成风格规则和家族契约字段，并列出未决维度，不填默认值。马良不调用大模型，
+提问由宿主 agent 完成。示例见 `examples/art-pilot/intake/art-direction-catalog.json`。
+
 ## 状态机
 
 `maliang_art.statemachine` 加载 YAML 策略，描述状态、转换、可选步骤及项目策略值，

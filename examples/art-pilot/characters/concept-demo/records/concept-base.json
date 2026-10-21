@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "conceptId": "concept-demo-base",
+  "characterId": "concept-demo",
+  "styleId": "demo-ink-concept-v1",
+  "form": "base",
+  "species": "synthetic anthropomorphic heron",
+  "image": null,
+  "imageSize": null,
+  "approval": {"status": "pending"}
+}

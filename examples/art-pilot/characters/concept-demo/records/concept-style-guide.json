@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "styleId": "demo-ink-concept-v1",
+  "track": "concept",
+  "framing": {
+    "subject": "single anthropomorphic animal character",
+    "body": "full-body standing, front three-quarter view",
+    "background": "plain warm paper, no scene"
+  },
+  "references": [
+    {
+      "title": "synthetic line study",
+      "borrow": ["fine line drawing", "restrained light wash"],
+      "forbid": ["copying any existing character", "frame", "text"]
+    }
+  ],
+  "rules": [
+    {"id": "ink-line-first", "instruction": "Fine ink line defines every form before color.", "method": "human", "required": true},
+    {"id": "paper-ground", "instruction": "Single character on plain paper; no environment, frame, or text.", "method": "human", "required": true},
+    {"id": "portrait-room", "instruction": "Head and shoulders stay unobstructed so a bust crop is possible.", "method": "human", "required": true}
+  ]
+}

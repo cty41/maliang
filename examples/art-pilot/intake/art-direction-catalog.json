@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "art-pilot-direction-v1",
+  "dimensions": [
+    {
+      "id": "purpose", "prompt": "最终用途是什么？", "priority": 1, "optionsMode": "fixed",
+      "options": [
+        {"id": "game-assets", "label": "游戏内实际使用的资产", "references": [],
+         "consequence": "后续要定 2D/3D、游戏类型、视角、比例等，分支较多", "risk": "规格要求严格，返工成本高"},
+        {"id": "concept-only", "label": "只要原画", "references": [],
+         "consequence": "只问原画风格、色调、题材和衍生用途，流程短", "risk": "原画不直接等于可用的游戏资产"}
+      ]
+    },
+    {
+      "id": "dimension", "prompt": "2D 还是 3D？", "priority": 2, "optionsMode": "fixed",
+      "when": {"purpose": ["game-assets"]},
+      "options": [
+        {"id": "2d", "label": "2D", "references": [], "consequence": "继续选择游戏类型和视角", "risk": "无额外风险"},
+        {"id": "3d", "label": "3D", "references": [], "consequence": "问询在此结束", "risk": "马良目前只支持 2D",
+         "stop": "马良目前只支持 2D 资产；3D 需求请使用其他工具链。"}
+      ]
+    },
+    {
+      "id": "genre", "prompt": "什么类型的游戏？", "priority": 3, "optionsMode": "fixed",
+      "when": {"dimension": ["2d"]},
+      "options": [
+        {"id": "rpg", "label": "RPG", "references": ["八方旅人"], "consequence": "角色、头像、场景需求都多", "risk": "资产种类多，风格统一难度高"},
+        {"id": "tactics", "label": "战棋", "references": ["皇家骑士团", "陷阵之志"], "consequence": "重角色朝向与格子可读性", "risk": "每个角色要多个朝向，工作量成倍"},
+        {"id": "platformer", "label": "平台跳跃 / 横版动作", "references": ["空洞骑士"], "consequence": "重动作帧与侧面剪影", "risk": "动作帧多，帧间一致性难"},
+        {"id": "tower-defense", "label": "塔防", "references": ["王国保卫战"], "consequence": "单位小、数量多", "risk": "小尺寸下可读性要求高"},
+        {"id": "card", "label": "卡牌", "references": ["杀戮尖塔"], "consequence": "重卡面插画，角色动作少", "risk": "插画量大，单张质量要求高"}
+      ]
+    },
+    {
+      "id": "view", "prompt": "游戏内视角？", "priority": 4, "optionsMode": "fixed",
+      "when": {"genre": ["rpg", "tactics", "platformer", "tower-defense", "card"]},
+      "options": [
+        {"id": "isometric", "label": "斜 45 度（isometric）", "references": ["王国保卫战", "皇家骑士团"],
+         "consequence": "格子和纵深清楚", "risk": "每个角色需要多个朝向；东西向靠水平镜像，左右不对称的特征会被翻转",
+         "maps": {"target": "contract", "field": "camera", "value": {"mode": "isometric", "profile": {"North": "UL", "South": "DR", "East": "UL+flipX", "West": "DR+flipX"}, "mirrorAccepted": true}},
+         "recommendWhen": {"genre": ["tactics", "tower-defense"]}},
+        {"id": "side", "label": "横版侧视", "references": ["空洞骑士"],
+         "consequence": "动作表现好，朝向只需左右", "risk": "没有上下朝向；向左靠水平镜像，左右不对称的特征会被翻转",
+         "maps": {"target": "contract", "field": "camera", "value": {"mode": "side", "profile": {"North": "none", "South": "none", "East": "R", "West": "R+flipX"}, "mirrorAccepted": true}},
+         "recommendWhen": {"genre": ["platformer"]}},
+        {"id": "top-down", "label": "正上方俯视", "references": ["星露谷物语"],
+         "consequence": "上下右三个原生朝向，向左靠镜像", "risk": "角色辨识度低；左右不对称的特征会被翻转",
+         "maps": {"target": "contract", "field": "camera", "value": {"mode": "top-down", "profile": {"North": "U", "South": "D", "East": "R", "West": "R+flipX"}, "mirrorAccepted": true}},
+         "recommendWhen": {"genre": ["rpg"]}},
+        {"id": "front", "label": "正面立绘（卡面）", "references": ["杀戮尖塔"],
+         "consequence": "只需一个朝向", "risk": "只有正面，不能在地图上转向行走",
+         "maps": {"target": "contract", "field": "camera", "value": {"mode": "front", "profile": {"North": "none", "South": "F", "East": "none", "West": "none"}, "mirrorAccepted": false}},
+         "recommendWhen": {"genre": ["card"]}}
+      ]
+    },
+    {
+      "id": "ratio", "prompt": "角色比例？", "priority": 5, "optionsMode": "fixed",
+      "when": {"view": ["isometric", "side", "top-down", "front"]},
+      "options": [
+        {"id": "capsule", "label": "胶囊体", "references": ["art-pilot 游隼示例"],
+         "consequence": "造型最简，系列感强", "risk": "物种区分只能靠耳朵、尾巴、配色等附件",
+         "maps": {"target": "contract", "field": "silhouettes", "value": ["capsule"]}},
+        {"id": "chibi", "label": "Q 版 2 到 3 头身", "references": ["灌篮高手 Q 版"],
+         "consequence": "可爱且能表现服饰", "risk": "四肢动作帧成本高于胶囊体"},
+        {"id": "realistic", "label": "写实比例", "references": ["轩辕剑3"],
+         "consequence": "表现力强", "risk": "小尺寸下细节糊，生成的一致性最难保证"}
+      ]
+    },
+    {
+      "id": "render", "prompt": "游戏内渲染方式？", "priority": 6, "optionsMode": "fixed",
+      "when": {"ratio": ["capsule", "chibi", "realistic"]},
+      "options": [
+        {"id": "line-flat", "label": "描线平涂", "references": ["王国保卫战"], "consequence": "清晰、批量稳定", "risk": "风险最低"},
+        {"id": "pixel", "label": "像素", "references": ["八方旅人"], "consequence": "复古辨识度高", "risk": "生图时像素网格不稳定，需要后处理"},
+        {"id": "painterly", "label": "厚涂", "references": ["暗黑破坏神 2"], "consequence": "质感强", "risk": "小尺寸难看清，批量时风格难统一"},
+        {"id": "ink-wash", "label": "水墨淡彩", "references": ["轩辕剑3"], "consequence": "东方气质强", "risk": "作为游戏内资产时透明边缘难处理"}
+      ]
+    },
+    {
+      "id": "split", "prompt": "原画和游戏内资产用不同风格吗？", "priority": 7, "optionsMode": "fixed",
+      "when": {"render": ["line-flat", "pixel", "painterly", "ink-wash"]},
+      "options": [
+        {"id": "dual", "label": "分轨：原画另一种风格", "references": ["最终幻想（天野喜孝）", "灌篮高手原画与 Q 版"],
+         "consequence": "原画可服务宣传和头像，通过认人特征连接游戏内资产", "risk": "多一份风格规则和转换规则要维护"},
+        {"id": "single", "label": "不分轨：同一种风格", "references": [],
+         "consequence": "只维护一套风格", "risk": "宣传图和头像的表现力受游戏内风格限制"}
+      ]
+    },
+    {
+      "id": "concept-style", "prompt": "原画风格？", "priority": 8, "optionsMode": "suggest",
+      "when": {"purpose": ["concept-only"], "split": ["dual"]}, "whenMode": "any",
+      "options": [
+        {"id": "classical-line", "label": "古典线描加淡彩", "references": ["轩辕剑3", "皇名月"],
+         "consequence": "设定信息清楚，便于提炼认人特征", "risk": "氛围感弱于厚涂",
+         "maps": {"target": "styleGuide", "field": "rules[]", "value": {"id": "ink-line-first", "instruction": "Fine ink line defines every form before color.", "method": "human", "required": true}}},
+        {"id": "ink-watercolor", "label": "水墨水彩，大量留白", "references": ["灌篮高手彩稿"],
+         "consequence": "东方气质强，笔触松弛", "risk": "细节少，服饰结构可能看不清",
+         "maps": {"target": "styleGuide", "field": "rules[]", "value": {"id": "loose-ink-wash", "instruction": "Loose ink and watercolor strokes with generous white space.", "method": "human", "required": true}}},
+        {"id": "painterly-promo", "label": "厚涂氛围（宣传向）", "references": ["八方旅人2 宣传图"],
+         "consequence": "海报和封面表现力最强", "risk": "不适合作为设定图，角色细节被氛围吞掉",
+         "maps": {"target": "styleGuide", "field": "rules[]", "value": {"id": "atmospheric-paint", "instruction": "Painterly atmosphere with smoky ink edges.", "method": "human", "required": true}}}
+      ]
+    },
+    {
+      "id": "derived-use", "prompt": "原画的衍生用途优先哪个？", "priority": 9, "optionsMode": "fixed",
+      "when": {"purpose": ["concept-only"], "split": ["dual"]}, "whenMode": "any",
+      "options": [
+        {"id": "portrait-first", "label": "对话头像优先", "references": ["八方旅人立绘头像"], "consequence": "原画要预留半身裁切空间", "risk": "全身构图受限"},
+        {"id": "promo-first", "label": "宣传图优先", "references": ["最终幻想天野原画海报"], "consequence": "构图自由", "risk": "设定信息可能不完整"},
+        {"id": "both", "label": "两者都要", "references": [], "consequence": "设定图与宣传图分开出", "risk": "原画工作量翻倍"}
+      ]
+    },
+    {
+      "id": "palette", "prompt": "色彩基调？", "priority": 10, "optionsMode": "suggest",
+      "when": {"purpose": ["concept-only"], "split": ["dual", "single"]}, "whenMode": "any",
+      "options": [
+        {"id": "bright", "label": "高饱和明快", "references": ["王国保卫战"], "consequence": "可爱、醒目", "risk": "容易显得廉价"},
+        {"id": "muted", "label": "低饱和古朴", "references": ["轩辕剑3"], "consequence": "沉稳、有年代感", "risk": "小尺寸下单位不够醒目"},
+        {"id": "dusk", "label": "暮色夜景", "references": ["空洞骑士"], "consequence": "氛围强", "risk": "单位和背景对比度难控制"}
+      ]
+    },
+    {
+      "id": "theme", "prompt": "题材与文化？", "priority": 11, "optionsMode": "suggest",
+      "when": {"purpose": ["concept-only"], "split": ["dual", "single"]}, "whenMode": "any",
+      "options": [
+        {"id": "eastern-classical", "label": "东方古典", "references": ["轩辕剑3"], "consequence": "服饰与纹样素材丰富", "risk": "考据要求高"},
+        {"id": "western-fantasy", "label": "西方奇幻", "references": ["暗黑破坏神 2"], "consequence": "受众熟悉", "risk": "同质化严重"},
+        {"id": "modern", "label": "现代", "references": [], "consequence": "贴近日常", "risk": "需要额外的风格化才有辨识度"}
+      ]
+    }
+  ]
+}

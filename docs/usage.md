@@ -192,6 +192,58 @@ The pure review API is available from `maliang_art.review`; structural ports
 (interfaces) are in `maliang_art.ports`, with JSON/Pillow adapters in
 `maliang_art.adapters`. Versioned JSON Schemas are shipped under `schemas/v1/`.
 
+### Concept art and identity markers
+
+Concept art may use a different style from in-game assets, for example ink
+concept art and capsule sprites. Four records connect them:
+`concept-style-guide`, `character-concept`, `identity-markers`, and
+`derived-usage` (portrait bust or promo). `records check` validates them and
+reports cross-record findings: frozen markers must cite approved concepts, and a
+bust crop needs an approved concept image and must fit inside it.
+
+`concept review <records-directory> --concept <id>` prints a Markdown review
+sheet listing the image, each human style check, each identity marker, and the
+decision options. With `--format questions` it prints the same content as
+AskQuestion JSON: style checks and identity markers as multi-select "which are
+unmet" questions ending in "all met" and "other issues" options, then a
+single-select conclusion (approve, reject, needs revision). Markers with `forms`
+appear only for those forms. `concept.decision_from_answers` maps the answers,
+including free text under `other`: approving while items are marked unmet or
+other issues are written is an error; rejecting or "needs revision" records
+rejected with the unmet items and free text as the note. Passing the question
+form rejects option ids it does not contain. `concept approve <record.json> --decision approved|rejected`
+records the decision. It can bind an image with `--image` and `--root`, and
+fills in the reviewer from git `user.name` and `user.email`, falling back to the
+OS login name; the source is recorded in `reviewerSource`. Agents run approve
+only after the user has explicitly replied to the sheet in the conversation.
+
+```python
+from maliang_art.concept import draft_identity_findings, markers_to_identity, palette_findings
+```
+
+`markers_to_identity` builds a sprite-slice draft `identity` block from each
+marker's `capsuleTranslation`; `draft_identity_findings` reports required
+markers missing from a draft; `palette_findings` compares caller-supplied
+opaque color counts with the marker palette. None of these generate images or
+judge likeness. See the synthetic `examples/art-pilot/characters/concept-demo`.
+
+### Art direction intake
+
+For broad requests, `intake start|next|answer|draft` walks a project-owned
+catalog (`art-direction-catalog` schema) as a question tree. `next` prints the
+next round in question-tool form, ordered by how costly a decision is to change
+later and limited to dimensions whose preconditions are met; every option label
+carries its consequence and risk. `answer` records the option or text, its
+source (`catalog-option`, `ai-suggested-option`, `user-text`, or
+`ai-inferred-confirmed`), and the options actually presented. Fixed dimensions
+reject AI suggestions, and stop options end the intake. Gate questions
+(`gate: true`: a stop option or later questions depend on them) reject raw
+`user-text`; map the words to an option, confirm it, and record
+`ai-inferred-confirmed`. `draft` maps chosen
+options to style-guide and contract fields and lists open dimensions without
+filling defaults. MaLiang does not call a language model; the host agent asks.
+See `examples/art-pilot/intake/art-direction-catalog.json`.
+
 ## State machine
 
 `maliang_art.statemachine` loads a YAML policy describing states, transitions,

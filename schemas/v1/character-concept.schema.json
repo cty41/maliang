@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Character concept v1",
+  "description": "One concept-art form of a character. Approval is recorded from a human reviewer; tools never set it.",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "conceptId", "characterId", "styleId", "form", "species", "image", "imageSize", "approval"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "conceptId": {"type": "string", "minLength": 1},
+    "characterId": {"type": "string", "minLength": 1},
+    "styleId": {"type": "string", "minLength": 1},
+    "form": {"type": "string", "minLength": 1},
+    "species": {"type": "string", "minLength": 1},
+    "image": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/artifact"}]},
+    "imageSize": {"oneOf": [{"type": "null"}, {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 1}}]},
+    "approval": {"$ref": "#/$defs/approval"}
+  },
+  "$defs": {
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {
+      "path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    }},
+    "approval": {"type": "object", "additionalProperties": false, "required": ["status"], "properties": {
+      "status": {"enum": ["pending", "approved", "rejected"]},
+      "reviewer": {"type": "string", "minLength": 1},
+      "reviewerSource": {"enum": ["git-config", "os-user", "manual"]},
+      "reviewedAt": {"type": "string", "minLength": 1},
+      "note": {"type": "string"}
+    }}
+  }
+}

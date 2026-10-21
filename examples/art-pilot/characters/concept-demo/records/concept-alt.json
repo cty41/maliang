@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "conceptId": "concept-demo-alt",
+  "characterId": "concept-demo",
+  "styleId": "demo-ink-concept-v1",
+  "form": "alt-form",
+  "species": "synthetic anthropomorphic heron, wings spread",
+  "image": null,
+  "imageSize": null,
+  "approval": {"status": "pending"}
+}

@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -110,6 +113,132 @@ def _records_check(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+def _git_config(key: str) -> str | None:
+    try:
+        result = subprocess.run(["git", "config", "--get", key], capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    value = result.stdout.strip()
+    return value if result.returncode == 0 and value else None
+
+
+def _reviewer_identity() -> tuple[str, str]:
+    name, email = _git_config("user.name"), _git_config("user.email")
+    if name:
+        return (f"{name} <{email}>" if email else name), "git-config"
+    try:
+        user = getpass.getuser()
+    except (OSError, KeyError, ImportError) as exc:
+        raise MaLiangError("cannot determine reviewer identity from git config or the OS user") from exc
+    return user, "os-user"
+
+
+def _concept_records(root: str) -> list[dict[str, Any]]:
+    from .records import infer_schema
+    records = []
+    for path in sorted(Path(root).rglob("*.json")):
+        value = load_json(path)
+        try:
+            kind = infer_schema(value)
+        except MaLiangError:
+            continue
+        if kind in {"concept-style-guide", "character-concept", "identity-markers"}:
+            records.append(validate_record(value, kind))
+    return records
+
+
+def _concept_review(args: argparse.Namespace) -> int:
+    from .concept import review_questions, review_sheet
+    records = _concept_records(args.records)
+    concept = next((r for r in records if r.get("conceptId") == args.concept and "form" in r), None)
+    if concept is None:
+        raise MaLiangError(f"unknown concept: {args.concept}")
+    style = next((r for r in records if r.get("styleId") == concept["styleId"] and "rules" in r), None)
+    markers = next((r for r in records if "markersId" in r and args.concept in r["conceptIds"]), None)
+    if style is None or markers is None:
+        raise MaLiangError("review needs the concept's style guide and identity markers in the same directory")
+    if args.format == "questions":
+        sys.stdout.write(json.dumps(review_questions(style, concept, markers), ensure_ascii=False, indent=2) + "\n")
+    else:
+        sys.stdout.write(review_sheet(style, concept, markers))
+    return 0
+
+
+def _concept_approve(args: argparse.Namespace) -> int:
+    from .adapters import PillowImageAdapter
+    from .concept import apply_decision
+    path = Path(args.path)
+    record = load_json(path)
+    image = size = None
+    if args.image:
+        root = Path(args.root) if args.root else path.parent
+        image, size = PillowImageAdapter().bind_image(root, args.image)
+    reviewer, source = _reviewer_identity()
+    at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    result = apply_decision(record, args.decision, reviewer=reviewer, source=source, at=at,
+                            note=args.note, image=image, image_size=size)
+    path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"path": str(path), "approval": result["approval"]}, ensure_ascii=False))
+    return 0
+
+
+def _intake_start(args: argparse.Namespace) -> int:
+    from .intake import validate_catalog, validate_intake
+    catalog = validate_catalog(load_json(args.catalog))
+    path = Path(args.intake)
+    if path.exists():
+        raise MaLiangError(f"intake already exists: {path}")
+    record = {"schemaVersion": 1, "intakeId": args.intake_id or path.stem, "catalogId": catalog["catalogId"],
+              "request": args.request, "answers": []}
+    validate_intake(record, catalog)
+    path.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({"intake": str(path)}, ensure_ascii=False))
+    return 0
+
+
+def _intake_next(args: argparse.Namespace) -> int:
+    from .intake import next_questions
+    print(json.dumps(next_questions(load_json(args.catalog), load_json(args.intake), limit=args.limit),
+                     ensure_ascii=False, indent=2))
+    return 0
+
+
+def _intake_answer(args: argparse.Namespace) -> int:
+    from .intake import IntakeError, presented_options, validate_intake
+    catalog, path = load_json(args.catalog), Path(args.intake)
+    record = load_json(path)
+    answer: dict[str, Any] = {"dimension": args.dimension}
+    if args.option is not None:
+        answer["option"] = args.option
+    else:
+        answer["text"] = args.text
+    answer["source"] = args.source or ("catalog-option" if args.option is not None else "user-text")
+    if args.confirmation:
+        answer["confirmation"] = args.confirmation
+    if args.follow_up_of:
+        answer["followUpOf"], answer["prompt"] = args.follow_up_of, args.prompt
+    if args.presented_json is not None:
+        try:
+            answer["presented"] = json.loads(args.presented_json)
+        except json.JSONDecodeError as exc:
+            raise IntakeError(f"--presented-json is not valid JSON: {exc}") from exc
+    elif args.follow_up_of:
+        answer["presented"] = []
+    else:
+        answer["presented"] = presented_options(catalog, args.dimension)
+    updated = {**record, "answers": [*record["answers"], answer]}
+    validate_intake(updated, catalog)
+    path.write_text(json.dumps(updated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(answer, ensure_ascii=False))
+    return 0
+
+
+def _intake_draft(args: argparse.Namespace) -> int:
+    from .intake import draft_from_intake
+    print(json.dumps(draft_from_intake(load_json(args.catalog), load_json(args.intake)), ensure_ascii=False, indent=2))
+    return 0
+
+
 def _review_validate(args: argparse.Namespace) -> int:
     value = load_json(args.path)
     authority = review.ReviewAuthority(args.authority_reviewer)
@@ -187,7 +316,8 @@ def build_parser() -> argparse.ArgumentParser:
     record_commands = records.add_subparsers(dest="command", required=True)
     validate = record_commands.add_parser("validate")
     validate.add_argument("path")
-    validate.add_argument("--schema", choices=["auto", "artifact", "pose-draft", "pose-card", "invocation", "delivery", "failure"], default="auto")
+    validate.add_argument("--schema", choices=["auto", "artifact", "pose-draft", "pose-card", "invocation", "delivery", "failure",
+                                                 "concept-style-guide", "character-concept", "identity-markers", "derived-usage"], default="auto")
     validate.add_argument("--root")
     validate.add_argument("--verify", action="store_true")
     validate.set_defaults(handler=_records_validate)
@@ -195,6 +325,54 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("root")
     check.add_argument("--verify", action="store_true")
     check.set_defaults(handler=_records_check)
+
+    concept = groups.add_parser("concept", help="print concept review sheets and record human decisions")
+    concept_commands = concept.add_subparsers(dest="command", required=True)
+    concept_review = concept_commands.add_parser("review", help="print the review sheet for one concept")
+    concept_review.add_argument("records", help="directory holding the style guide, concept, and identity markers")
+    concept_review.add_argument("--concept", required=True)
+    concept_review.add_argument("--format", choices=["markdown", "questions"], default="markdown",
+                                help="questions prints AskQuestion JSON")
+    concept_review.set_defaults(handler=_concept_review)
+    concept_approve = concept_commands.add_parser(
+        "approve", help="record a decision the human gave explicitly; reviewer comes from git config or the OS user")
+    concept_approve.add_argument("path", help="character-concept or derived-usage JSON file")
+    concept_approve.add_argument("--decision", required=True, choices=["approved", "rejected"])
+    concept_approve.add_argument("--image", help="concept image path relative to --root")
+    concept_approve.add_argument("--root", help="project root for --image; defaults to the record's directory")
+    concept_approve.add_argument("--note")
+    concept_approve.set_defaults(handler=_concept_approve)
+
+    intake = groups.add_parser("intake", help="ask broad art requests as explicit choice questions")
+    intake_commands = intake.add_subparsers(dest="command", required=True)
+    intake_start = intake_commands.add_parser("start", help="create an empty intake record for a catalog")
+    intake_start.add_argument("catalog")
+    intake_start.add_argument("intake")
+    intake_start.add_argument("--request", required=True, help="the user's original request, verbatim")
+    intake_start.add_argument("--intake-id")
+    intake_start.set_defaults(handler=_intake_start)
+    intake_next = intake_commands.add_parser("next", help="print the next round of questions as AskQuestion JSON")
+    intake_next.add_argument("catalog")
+    intake_next.add_argument("intake")
+    intake_next.add_argument("--limit", type=int, default=3)
+    intake_next.set_defaults(handler=_intake_next)
+    intake_answer = intake_commands.add_parser("answer", help="record one answer the user explicitly gave")
+    intake_answer.add_argument("catalog")
+    intake_answer.add_argument("intake")
+    intake_answer.add_argument("--dimension", required=True)
+    choice = intake_answer.add_mutually_exclusive_group(required=True)
+    choice.add_argument("--option")
+    choice.add_argument("--text")
+    intake_answer.add_argument("--source", choices=["catalog-option", "ai-suggested-option", "user-text", "ai-inferred-confirmed"])
+    intake_answer.add_argument("--presented-json", help="options actually shown; defaults to the catalog options")
+    intake_answer.add_argument("--confirmation", help="the user's confirming words for ai-inferred-confirmed")
+    intake_answer.add_argument("--follow-up-of")
+    intake_answer.add_argument("--prompt", help="follow-up question text")
+    intake_answer.set_defaults(handler=_intake_answer)
+    intake_draft = intake_commands.add_parser("draft", help="print draft style-guide fields and open decisions")
+    intake_draft.add_argument("catalog")
+    intake_draft.add_argument("intake")
+    intake_draft.set_defaults(handler=_intake_draft)
 
     review_parser = groups.add_parser("review", help="validate review-core records")
     review_commands = review_parser.add_subparsers(dest="command", required=True)

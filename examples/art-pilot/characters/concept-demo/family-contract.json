@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "familyId": "demo-capsule-v1",
+  "camera": {"mode": "isometric", "mirrorAccepted": true, "profile": {"North": "UL", "South": "DR", "East": "UL+flipX", "West": "DR+flipX"}},
+  "silhouettes": ["capsule"],
+  "attachments": ["long-beak", "crest-plume", "staff-stub", "feet-pair"],
+  "drawingRules": [
+    {"id": "thick-outline", "instruction": "Thick dark outline around the complete silhouette.", "method": "human", "required": true},
+    {"id": "flat-value-blocks", "instruction": "Flat color blocks with 2-3 hard value steps; no smooth gradients.", "method": "human", "required": true},
+    {"id": "capsule-first-read", "instruction": "Silhouette reads as a compact upright capsule before species details.", "method": "human", "required": true},
+    {"id": "canvas-alpha", "instruction": "Output dimensions match; alpha is nonempty; no alpha touches canvas edge.", "method": "alpha-bounds", "required": true}
+  ],
+  "paletteRoles": {"main": "#C9D1D6", "secondary": "#2E3438", "outline": "#22272B", "accent": "#D9A441"},
+  "targets": {"sourceSize": [1024, 1024], "outputSize": [256, 256], "anchorX": 512, "groundY": 900, "displaySizes": [128, 150], "tolerance": 3,
+              "contextBoard": {"cellSize": [128, 128], "columns": 4}},
+  "statePolicy": {"allowedCoreTransforms": ["idle-upright"], "allowedPartChanges": []}
+}

@@ -17,7 +17,12 @@ _SCHEMA_ALIASES = {
     "invocation": "invocation",
     "delivery": "delivery",
     "failure": "failure",
+    "concept-style-guide": "concept-style-guide",
+    "character-concept": "character-concept",
+    "identity-markers": "identity-markers",
+    "derived-usage": "derived-usage",
 }
+_CONCEPT_KINDS = {"concept-style-guide", "character-concept", "identity-markers", "derived-usage"}
 
 
 class RecordValidationError(MaLiangError):
@@ -84,6 +89,14 @@ def infer_schema(record: Any) -> str:
         return "delivery"
     if "failureId" in record or ("failedAt" in record and "retryable" in record):
         return "failure"
+    if "styleId" in record and "rules" in record:
+        return "concept-style-guide"
+    if "conceptId" in record and "form" in record:
+        return "character-concept"
+    if "markersId" in record:
+        return "identity-markers"
+    if "usageId" in record:
+        return "derived-usage"
     raise RecordValidationError("cannot infer record schema; pass --schema")
 
 
@@ -109,6 +122,12 @@ def validate_record(record: Any, schema: str = "auto", *, root: str | Path | Non
         if kind == "delivery":
             return validate_delivery(value, root=root, verify=verify)
         return validate_invocation(value) if kind == "invocation" else validate_failure(value)
+    if kind in _CONCEPT_KINDS:
+        from .concept import validate_concept, validate_markers, validate_style_guide, validate_usage
+        if kind == "character-concept":
+            return validate_concept(value, root=root, verify=verify)
+        return {"concept-style-guide": validate_style_guide, "identity-markers": validate_markers,
+                "derived-usage": validate_usage}[kind](value)
     raise RecordValidationError(f"unknown schema: {kind}")
 
 
@@ -123,6 +142,7 @@ def check_tree(root: str | Path, *, verify: bool = False) -> tuple[int, list[str
     count = 0
     invocation_ids: set[str] = set()
     outcomes: list[tuple[str, str]] = []
+    concept_chain: list[dict[str, Any]] = []
     for path in sorted(base.rglob("*.json")):
         count += 1
         relative = path.relative_to(base).as_posix()
@@ -134,9 +154,14 @@ def check_tree(root: str | Path, *, verify: bool = False) -> tuple[int, list[str
                 invocation_ids.add(validated["invocationId"])
             elif kind in {"delivery", "failure"}:
                 outcomes.append((relative, validated["invocationId"]))
+            elif kind in _CONCEPT_KINDS - {"concept-style-guide"}:
+                concept_chain.append(validated)
         except MaLiangError as exc:
             errors.append(f"{relative}: {exc}")
     for relative, invocation_id in outcomes:
         if invocation_id not in invocation_ids:
             errors.append(f"{relative}: invocationId does not reference an invocation in this tree: {invocation_id}")
+    if concept_chain:
+        from .concept import chain_findings
+        errors.extend(chain_findings(concept_chain))
     return count, errors

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "usageId": "concept-demo-portrait-bust",
+  "conceptId": "concept-demo-base",
+  "kind": "portrait-bust",
+  "purpose": "dialogue portrait cropped from the approved base concept",
+  "crop": {"x": 0, "y": 0, "width": 1, "height": 1},
+  "approval": {"status": "pending"}
+}

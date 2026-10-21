@@ -82,6 +82,39 @@ art decisions. From-scratch exploration may have **empty references**: recommend
 style references where useful, but require neither an existing character image
 nor a model sheet. Geometry blockout is not a mandatory design stage.
 
+When the request is broad or style decisions are missing, restate your
+understanding in one or two sentences, then run an art direction intake against
+the project's catalog (sample: `examples/art-pilot/intake/art-direction-catalog.json`):
+`python -m maliang_art intake start`, then repeat `intake next`, ask the returned
+questions with the host's question tool, and record each reply with `intake answer`
+until `done`; finish with `intake draft`. Without a question tool, present the
+same options as numbered text. Agent boundaries:
+
+- Prefill an answer from the user's words only after they confirm it; record it
+  as `ai-inferred-confirmed` with their confirming words.
+- Add your own options only on `suggestable` dimensions, mark them as AI
+  suggestions, and include them in `--presented-json`.
+- After an "Other" reply you may ask one follow-up and record it with
+  `--follow-up-of`; flag style conflicts the catalog does not cover.
+- On a question marked `gate: true`, do not record the user's own text as is: map
+  it to one listed option, ask the user to confirm, then record it as
+  `ai-inferred-confirmed` with `--option` and their confirming words.
+- Never answer for the user, make the final decision, or continue past a `stopped` result.
+
+The intake view answer selects the `design compile` camera: `isometric`, `side`,
+`top-down`, or `front`; each has a fixed direction profile.
+
+When concept art and in-game assets differ strongly in style, run the concept
+track in runbook section 0.2 before the asset brief:
+
+- Write the concept style guide and one pending concept record per form; ask for
+  separate authorization before generating each concept image.
+- Run `python -m maliang_art concept review <records-directory> --concept <id> --format questions`,
+  ask the returned questions with the host's question tool, and run `concept approve`
+  only after the user answers. Without a question tool, print the Markdown sheet instead.
+- After approval, freeze the identity markers and build the asset draft identity
+  from them. Never pass concept art to asset generation as a reference image.
+
 Inspect the tools actually exposed in this host and their argument schemas:
 can they generate, edit, attach actual image bytes/files in order, preserve the
 full prompt and parameters, return an output artifact, and display that artifact?

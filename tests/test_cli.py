@@ -28,7 +28,7 @@ def test_package_help_lists_commands(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--help"])
     assert exc.value.code == 0
-    assert "{pose,design,records,review,flow}" in capsys.readouterr().out
+    assert "{pose,design,records,concept,intake,review,flow}" in capsys.readouterr().out
 
 
 def test_pose_render_and_select_cli(tmp_path, draft, capsys):
