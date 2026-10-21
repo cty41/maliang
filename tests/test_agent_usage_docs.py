@@ -323,3 +323,22 @@ def test_usage_resources_have_mit_reuse_coverage():
         for path in annotation["path"]
     }
     assert {"*.md", "llms.txt", "skills/**", "tests/**"} <= mit_paths
+
+
+def test_agents_md_routes_usage_to_skill_before_development_rules():
+    head = "\n".join(text(ROOT / "AGENTS.md").splitlines()[:10])
+    assert "skills/maliang-art/SKILL.md" in markdown_links(head)
+    assert "work/" in head and "development rules" in head.lower()
+
+
+def test_user_workspace_is_ignored_by_git():
+    assert "/work/" in text(ROOT / ".gitignore").splitlines()
+
+
+def test_skill_routes_concept_track_and_camera_modes():
+    skill = text(ROOT / "skills/maliang-art/SKILL.md")
+    assert "concept review" in skill and "--format questions" in skill
+    assert "0.2" in skill
+    for mode in ("isometric", "side", "top-down", "front"):
+        assert mode in skill
+    assert "gate" in skill

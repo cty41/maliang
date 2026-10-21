@@ -8,6 +8,8 @@ no MaLiang model field or credentials file to fill in. Do not copy keys or
 subscription tokens into MaLiang records or prompts.
 
 No skill installation or auto-discovery is needed; you point the Agent at files.
+When a session opens at the checkout root, `AGENTS.md` already routes usage
+requests to the skill; from any other directory, give the Agent the skill path.
 
 ## Checklist
 
@@ -31,8 +33,8 @@ python -I examples/art-pilot/scripts/production.py --help
    call the absolute interpreter path with PowerShell's `&` operator. If imports or
    commands fail, fix the installation with permission; do not inject source paths
    to disguise an incompatible environment.
-5. **Agree a separate asset project root**, for example a fresh folder under the
-   ignored `work/art-pilot/`. It is not the MaLiang source root, even when nested
+5. **Agree a separate asset project root**, for example a fresh folder under
+   `work/`, which Git ignores. It is not the MaLiang source root, even when nested
    inside it. Pass it as `--project` before the sample subcommand; sample input
    paths resolve relative to it. Use new output paths rather than overwriting source art.
 6. **Inspect the host's actual tools and argument schemas**: can it generate/edit,

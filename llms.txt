@@ -24,7 +24,7 @@ and runbook. This index does not imply automatic agent discovery or skill loadin
 - [Production sample](examples/art-pilot/scripts/production.py): repository script, not a package production subcommand.
 - [Python API exports](src/maliang_art/__init__.py): public entry points.
 - [Record schemas](schemas/v1): versioned JSON contracts.
-- [Development guidance](AGENTS.md): changing MaLiang, not launching generation.
+- [Agent router](AGENTS.md): routes usage requests to the skill and development requests to the development rules; neither launches generation.
 - [Contributing](CONTRIBUTING.md): developer setup and verification.
 - [Security and limitations](SECURITY.md): trust boundaries; host tools and real human approval remain external.
 

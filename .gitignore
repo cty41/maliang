@@ -8,4 +8,4 @@ dist/
 .coverage
 /examples/art-pilot/maliang.lock.json
 /examples/art-pilot/production/
-/work/art-pilot/
+/work/
