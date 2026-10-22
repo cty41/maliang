@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "size": [
+    480,
+    360
+  ],
+  "background": "#F4F1EA",
+  "thumbs": [
+    {
+      "path": "docs/gallery/thumbs/little-orange-sprite.png",
+      "sha256": "724093e68c9df50ad114ec88d7a187ea1d39e1b8a2960d4efb20839fba0c960a",
+      "source": "examples/little-orange/candidates/orange-front-003-sprite.png",
+      "sourceSha256": "c4686250f6167533d9ad898fbc4e8fecd14ca3a0bd653097fb899487adb8567f"
+    },
+    {
+      "path": "docs/gallery/thumbs/little-orange-concept.png",
+      "sha256": "b1f542360a656d2d877107ea34b784255ae2dcaf650ff9f1b7dda6c5430a0070",
+      "source": "examples/little-orange/concept/base-v2.jpg",
+      "sourceSha256": "bbb6203cce19eae738bb1b026ab85700a615f55db7097e0edf225fafdae16099"
+    },
+    {
+      "path": "docs/gallery/thumbs/little-orange-001.png",
+      "sha256": "e4c115bad1909becf3c8f286c14ec61d2c6503ffad7335fb25f712cbb3215e98",
+      "source": "examples/little-orange/candidates/orange-front-001.jpg",
+      "sourceSha256": "a35bf5187bf88cd57846649f03d6d8d2f4d92c92afa5217a09f29505d0c9ea70"
+    },
+    {
+      "path": "docs/gallery/thumbs/little-orange-003.png",
+      "sha256": "120f6a32125e1175ab595d32bfe8609641975679ae6d922f0d75810eec19e871",
+      "source": "examples/little-orange/candidates/orange-front-003.jpg",
+      "sourceSha256": "433881ab6e2d6358d5aedbebe636178e59ca77a90ca0d89056f456096074e868"
+    },
+    {
+      "path": "docs/gallery/thumbs/falcon.png",
+      "sha256": "8aa5f2edab036ad9570255645b85340fa3dc948cb92f3b5be81bc6ee9857aeb7",
+      "source": "examples/art-pilot/characters/falcon-idle/raw/codex-idle.png",
+      "sourceSha256": "9393f594dbf4f38ec200ce6989bc7579c90e23df29940067273d2ca024417942"
+    },
+    {
+      "path": "docs/gallery/thumbs/crested-goshawk.png",
+      "sha256": "34cd278c2fce5d290ca3f27140ddadce1655ad067a08c85bfabe9221c0523699",
+      "source": "examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png",
+      "sourceSha256": "ea442a95ad82d87cf0b89426f14a9aa36d8606a5294e5f1edb2e63c7313bfcbc"
+    },
+    {
+      "path": "docs/gallery/thumbs/five-red-chow-poet.png",
+      "sha256": "cc04d4f90ce77e25fc54fcfeb68b32a70bf8fcf4dd6990dd162a6da2a6c41ac4",
+      "source": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_ring_pommel_dao_idle_dr_v03.png",
+      "sourceSha256": "e2246e0e6d3a4cea92b85cf7add5ea442366389ac5173490bf0bff2fbf25dfb3"
+    },
+    {
+      "path": "docs/gallery/thumbs/red-shiba-amazon.png",
+      "sha256": "f47da18ff589b5cf9999e9b41218fdcd2e2686ef1ef54270a55a51b3a7409e7c",
+      "source": "examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png",
+      "sourceSha256": "74014ddcd8a242bc0a34a3b25596a0d96f1c394118e951e19b76118b1c4b2d86"
+    },
+    {
+      "path": "docs/gallery/thumbs/red-shiba-amazon-compare.png",
+      "sha256": "a817ad742c2108bb46e4a5b16cb06ec96cf19449be28f50e3ac4ffb5bbd3f552",
+      "source": "examples/tactics-amazon/red-shiba-amazon-poet-tilemap-compare.png",
+      "sourceSha256": "bfca3829c8572e2cbb1addea034120158ffbdd0e434e61a2d3c31b34ff49137a"
+    }
+  ]
+}

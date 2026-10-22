@@ -19,6 +19,12 @@ SPDX-FileCopyrightText = "cty41"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
+path = ["docs/gallery/thumbs/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "cty41"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = ["examples/tactics-amazon/**"]
 precedence = "override"
 SPDX-FileCopyrightText = "cty41"

@@ -30,11 +30,13 @@ flowchart LR
 
 ## 作品集
 
-用这套流程做过的真实作品，作者 cty41，CC-BY-4.0。只有小橙子走完了完整马良流程，其余早于它。
+用这套流程做过的真实作品，作者 cty41，CC-BY-4.0；只有小橙子走完了完整马良流程。[完整作品集与提示词概括](docs/gallery.zh-CN.md)。
 
-<img src="examples/little-orange/candidates/orange-front-003-sprite.png" width="150" alt="小橙子（已采用的精灵图）" title="小橙子（已采用的精灵图）"> <img src="examples/art-pilot/characters/falcon-idle/raw/codex-idle.png" width="150" alt="游隼" title="游隼"> <img src="examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png" width="150" alt="凤头鹰" title="凤头鹰"> <img src="examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png" width="150" alt="亚马逊赤柴" title="亚马逊赤柴">
-
-[完整作品集与提示词概括](docs/gallery.zh-CN.md).
+| **小橙子 · Little Orange** | **游隼 · Falcon** | **亚马逊赤柴 · Red Shiba Amazon** |
+|---|---|---|
+| ![little-orange-sprite](docs/gallery/thumbs/little-orange-sprite.png) | ![falcon](docs/gallery/thumbs/falcon.png) | ![red-shiba-amazon](docs/gallery/thumbs/red-shiba-amazon.png) |
+| **凤头鹰 · Crested goshawk** | **五红柴诗人 · Five-red Chow Poet** | **小橙子原画 · Little Orange concept** |
+| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![little-orange-concept](docs/gallery/thumbs/little-orange-concept.png) |
 
 ## 快速开始
 

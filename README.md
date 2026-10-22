@@ -34,7 +34,11 @@ Terms like contract, draft, candidate, and adoption are explained in
 
 Real artwork by cty41 under CC-BY-4.0; only Little Orange went through the full flow. [Full gallery with prompt summaries](docs/gallery.md).
 
-<img src="examples/little-orange/candidates/orange-front-003-sprite.png" width="150" alt="Little Orange (adopted sprite)" title="Little Orange (adopted sprite)"> <img src="examples/art-pilot/characters/falcon-idle/raw/codex-idle.png" width="150" alt="Falcon" title="Falcon"> <img src="examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png" width="150" alt="Crested goshawk" title="Crested goshawk"> <img src="examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png" width="150" alt="Red Shiba Amazon" title="Red Shiba Amazon">
+| **Little Orange · 小橙子** | **Falcon · 游隼** | **Red Shiba Amazon · 亚马逊赤柴** |
+|---|---|---|
+| ![little-orange-sprite](docs/gallery/thumbs/little-orange-sprite.png) | ![falcon](docs/gallery/thumbs/falcon.png) | ![red-shiba-amazon](docs/gallery/thumbs/red-shiba-amazon.png) |
+| **Crested goshawk · 凤头鹰** | **Five-red Chow Poet · 五红柴诗人** | **Little Orange concept · 小橙子原画** |
+| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![little-orange-concept](docs/gallery/thumbs/little-orange-concept.png) |
 
 ## Quick start
 
@@ -63,13 +67,10 @@ tutorial explains each file, then has you compile a real sample brief.
 ## Where to go next
 
 - **Learn the workflow**: [getting started](docs/getting-started.md), then [concepts](docs/concepts.md).
-- **Let an Agent drive it**: [Agent setup](docs/agent-setup.md). Example request: “Read the
-  MaLiang skill in my checkout, help me prepare a falcon idle sprite, and stop before
-  generating images so I can review the request.”
+- **Let an Agent drive it**: [Agent setup](docs/agent-setup.md), e.g. “Read the MaLiang skill and prepare a falcon idle sprite; stop before generating.”
 - **Run a real project**: the [production runbook](examples/art-pilot/docs/runbook.en.md).
 - **Look up a command or API**: the [usage reference](docs/usage.md).
-- **See examples**: [art-pilot](examples/art-pilot/README.en.md) (offline practice and curated
-  falcon images) and [poet-cast](examples/poet-cast/ATTRIBUTION.md) (attributed tutorial).
+- **See examples**: [art-pilot](examples/art-pilot/README.en.md) (offline practice, curated falcon images) and [poet-cast](examples/poet-cast/ATTRIBUTION.md) (attributed tutorial).
 - **Contribute**: [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
 
 ## Limits worth knowing
@@ -86,5 +87,4 @@ MaLiang was extracted and generalized from the **Tactics artwork tooling** so ot
 projects can reuse its pose-proof and review workflow ([extraction record](EXTRACTED_FROM.md)).
 More references: [document map](llms.txt), [security](SECURITY.md).
 
-Code/package: [MIT](LICENSE). Poet-cast tutorial: [CC BY 4.0](examples/poet-cast/ATTRIBUTION.md).
-Asset licenses: [REUSE.toml](REUSE.toml).
+Code/package: [MIT](LICENSE). Poet-cast tutorial: [CC BY 4.0](examples/poet-cast/ATTRIBUTION.md). Asset licenses: [REUSE.toml](REUSE.toml).

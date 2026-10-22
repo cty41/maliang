@@ -1,53 +1,32 @@
 # Gallery
 
-[Back to README](../README.md)
+[Back to README](../README.md) · [简体中文](gallery.zh-CN.md)
 
-Real artwork from projects that used this workflow. Prompts are summaries; the
-full text lives where linked. All images are by cty41 under CC-BY-4.0 (see each
-example's `ATTRIBUTION.md`). Rejected attempts are kept on purpose.
+Real artwork by **cty41**, CC-BY-4.0. Thumbnails are display copies
+([how they are built](gallery/ATTRIBUTION.md)); full images and records live in
+the linked examples. Rejected attempts are kept on purpose. Only Little Orange
+went through the full MaLiang flow; the birds, the Poet, and the Amazon predate
+it.
 
-**Little Orange** ([full run](../examples/little-orange/README.md)): the user asked
-for "a Little Orange agent, a programmer, happy and sharp-tongued". MaLiang
-route, human review, matte-resize to a transparent 256 sprite.
+## Little Orange, step by step
 
-<table><tr>
-<td align="center"><img src="../examples/little-orange/concept/base-v2.jpg" width="200"><br>Concept v2 (approved)</td>
-<td align="center"><img src="../examples/little-orange/candidates/orange-front-003-sprite.png" width="200"><br>Adopted sprite</td>
-<td align="center"><img src="../examples/little-orange/candidates/orange-front-001.jpg" width="200"><br>First try (rejected)</td>
-</tr></table>
+From one sentence to an adopted sprite. Each step is a real human or technical
+decision, not an animation. [Full run](../examples/little-orange/README.md).
 
-Prompt summary: a cartoon orange fruit is the whole body, with tiny Q-version
-hands and feet; clean line art with flat color; a leaf tilted like a cowlick,
-square glasses with one cyan glare, a lopsided smirk, one hand on an open
-laptop and the other pointing at the viewer; no hoodie, text, or logos. The
-production brief adds a flat magenta background so a real alpha can be matted
-out. Exact text: `examples/little-orange/design/design.json`, field `prompt`.
+| **1 · Concept v2 · approved** | **2 · First try · rejected** | **3 · Magenta key · technical fail** | **4 · Matted sprite · adopted** |
+|---|---|---|---|
+| ![concept](gallery/thumbs/little-orange-concept.png) | ![first try](gallery/thumbs/little-orange-001.png) | ![magenta key](gallery/thumbs/little-orange-003.png) | ![sprite](gallery/thumbs/little-orange-sprite.png) |
+| Line art, the orange is the body | Painted checkerboard, fruit logo | No alpha in the JPEG, as expected | `matte-resize` to 256, alpha passes |
 
-**Falcon and Crested Goshawk** ([art-pilot](../examples/art-pilot/README.en.md)):
-two chosen bird sprites, 512 px with a magenta background, made before this
-workflow was formalized.
+## Works
 
-<table><tr>
-<td align="center"><img src="../examples/art-pilot/characters/falcon-idle/raw/codex-idle.png" width="200"><br>falcon-idle</td>
-<td align="center"><img src="../examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png" width="200"><br>crested-goshawk-idle</td>
-</tr></table>
+| | |
+|---|---|
+| ![Little Orange](gallery/thumbs/little-orange-sprite.png) | ![Falcon](gallery/thumbs/falcon.png) |
+| **小橙子 · Little Orange**<br>Front chibi sprite · line art and flat color<br>Prompt summary: a cartoon orange is the whole body with tiny Q-version hands and feet; leaf cowlick, square glasses with one cyan glare, lopsided smirk, laptop in one hand, pointing with the other; no hoodie, text, or logos; flat magenta background for matting. Exact text: `design/design.json`, field `prompt`. [Example](../examples/little-orange/README.md) | **游隼 · Falcon**<br>Idle bird sprite · magenta key<br>Content summary (prompt history not kept): real-bird topology on a compact capsule torso, folded wings against the body, feet on the ground baseline, short tail. [art-pilot](../examples/art-pilot/README.en.md) |
+| ![Crested goshawk](gallery/thumbs/crested-goshawk.png) | ![Five-red Chow Poet](gallery/thumbs/five-red-chow-poet.png) |
+| **凤头鹰 · Crested goshawk**<br>Idle bird sprite · magenta key<br>Content summary (prompt history not kept): crested head, barred chest, folded wings, same capsule body plan as the falcon. [art-pilot](../examples/art-pilot/README.en.md) | **五红柴诗人 · Five-red Chow Poet**<br>Isometric idle sprite, facing down-right · Tactics<br>Content summary: a red chow-chow poet holding a ring-pommel dao; the pose was chosen from stick-figure options first. [poet-cast](../examples/poet-cast/README.md) |
+| ![Red Shiba Amazon](gallery/thumbs/red-shiba-amazon.png) | ![Amazon and Poet](gallery/thumbs/red-shiba-amazon-compare.png) |
+| **亚马逊赤柴 · Red Shiba Amazon**<br>Review preview, facing up-left · Tactics<br>Content summary (prompt history not found): a Q-version red shiba warrior with a spear and a round shield. A 128 px review image, so the thumbnail is soft. [tactics-amazon](../examples/tactics-amazon/ATTRIBUTION.md) | **亚马逊与诗人 · Amazon and Poet on tiles**<br>Review board · Tactics<br>Content summary: the Amazon / Hunter and the equipped Poet side by side on isometric tiles to compare scale and style. [tactics-amazon](../examples/tactics-amazon/ATTRIBUTION.md) |
 
-Content summary (original prompts were not kept): real-bird topology on a
-compact capsule torso, folded wings held against the body, two feet on the
-ground baseline, short tail. The attribution file records the curation, not a
-reconstructed generation chain.
-
-**Red Shiba Amazon** ([tactics-amazon](../examples/tactics-amazon/ATTRIBUTION.md)):
-review images from the Tactics game project, unmodified.
-
-<table><tr>
-<td align="center"><img src="../examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png" width="256"><br>Amazon, facing up-left</td>
-<td align="center"><img src="../examples/tactics-amazon/red-shiba-amazon-poet-tilemap-compare.png" width="384"><br>Amazon and Poet on tiles</td>
-</tr></table>
-
-Content summary (prompt history not found): a red shiba inu warrior in Q
-version with a spear and a round shield, drawn for an isometric tile view.
-These are review images, not final key art.
-
-Birds and the Amazon predate the MaLiang flow; only Little Orange was produced
-through it.
+Showcase images are not proof of current production approval.

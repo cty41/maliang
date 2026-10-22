@@ -368,9 +368,41 @@ def test_readme_gallery_links_existing_images_and_credits_sources():
             assert len(images) >= minimum, (readme, page)
             for image in images:
                 assert (base / image).is_file(), (readme, page, image)
-        for needed in ("examples/little-orange", "examples/tactics-amazon", "falcon-idle",
-                       "crested-goshawk-idle", "CC-BY-4.0"):
+        for needed in ("examples/little-orange", "examples/tactics-amazon", "examples/art-pilot",
+                       "examples/poet-cast", "CC-BY-4.0"):
             assert needed in full, (page, needed)
+
+
+def gallery_images(source):
+    return re.findall(r"(?:src=\"|!\[[^\]]*\]\()([^\")\s]+)", source)
+
+
+def test_gallery_uses_uniform_thumbnails_in_titled_grids():
+    from PIL import Image
+    for readme, heading in (("README.md", "## Gallery"), ("README.zh-CN.md", "## 作品集")):
+        teaser = text(ROOT / readme).split(heading, 1)[1].split("\n## ", 1)[0]
+        rows = [line for line in teaser.splitlines() if line.startswith("|") and not line.startswith("|---")]
+        assert len(rows) >= 4, readme
+        for titles, images in zip(rows[0::2], rows[1::2]):
+            cells = [c.strip() for c in titles.strip("|").split("|")]
+            assert len(cells) == 3 and all(re.fullmatch(r"\*\*.+ · .+\*\*", c) for c in cells), titles
+            assert len(gallery_images(images)) == 3, images
+        for image in gallery_images(teaser):
+            assert image.startswith("docs/gallery/thumbs/"), image
+            with Image.open(ROOT / image) as thumb:
+                assert thumb.size == (480, 360), image
+    pages = [set(gallery_images(text(ROOT / p))) for p in ("docs/gallery.md", "docs/gallery.zh-CN.md")]
+    assert pages[0] == pages[1] and all(i.startswith("gallery/thumbs/") for i in pages[0])
+
+
+def test_gallery_thumbnail_manifest_matches_sources_and_files():
+    import hashlib
+    import json
+    manifest = json.loads(text(ROOT / "docs/gallery/thumbs.json"))
+    assert manifest["background"] == "#F4F1EA" and manifest["size"] == [480, 360]
+    for item in manifest["thumbs"]:
+        for key, path in (("sourceSha256", item["source"]), ("sha256", item["path"])):
+            assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == item[key], path
 
 
 def test_tactics_amazon_assets_match_manifest_hashes():
