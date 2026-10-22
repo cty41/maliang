@@ -37,12 +37,6 @@
       "sourceSha256": "47511e295d72fff9606c4788efb963b8eac1ca3b02dec3984a909a583ddb7921"
     },
     {
-      "path": "docs/gallery/thumbs/five-red-chow-poet-cast.png",
-      "sha256": "a0955d038132f37a9d0da0651ba553b57398d6b2db4fc4c3c947bd77c8fb6d51",
-      "source": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_cast_dr_vertical_guard_grip_v01.png",
-      "sourceSha256": "7cd072d554222d24c1cc4b357f3220260c01016c47be51d21c34e045d4139883"
-    },
-    {
       "path": "docs/gallery/thumbs/red-shiba-amazon.png",
       "sha256": "f4652fd1461ed79c8754cdd427becbcf00ef9bbda8c788495ee9464a1b8b61c3",
       "source": "examples/tactics-amazon/doge_hunter_death.png",

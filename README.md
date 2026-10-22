@@ -32,13 +32,13 @@ Terms like contract, draft, candidate, and adoption are explained in
 
 ## Gallery
 
-Real artwork by cty41 under CC-BY-4.0; only Little Orange went through the full flow. [Full gallery with prompt summaries](docs/gallery.md).
+Real artwork by cty41 (GameMancer by loco) under CC-BY-4.0; only Little Orange went through the full flow. [Full gallery with prompt summaries](docs/gallery.md).
 
 | **Little Orange · 小橙子** | **Falcon · 游隼** | **Red Shiba Amazon · 亚马逊赤柴** |
 |---|---|---|
 | ![little-orange-sprite](docs/gallery/thumbs/little-orange-sprite.png) | ![falcon](docs/gallery/thumbs/falcon.png) | ![red-shiba-amazon](docs/gallery/thumbs/red-shiba-amazon.png) |
-| **Crested goshawk · 凤头鹰** | **Five-red Chow Poet · 五红柴诗人** | **Five-red Chow Poet, cast · 五红柴诗人（施法）** |
-| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![five-red-chow-poet-cast](docs/gallery/thumbs/five-red-chow-poet-cast.png) |
+| **Crested goshawk · 凤头鹰** | **Five-red Chow Poet · 五红柴诗人** | **[GameMancer](examples/gamemancer/README.md) · by loco** |
+| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![gamemancer](docs/gallery/thumbs/gamemancer.png) |
 
 ## Quick start
 

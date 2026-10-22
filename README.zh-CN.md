@@ -30,13 +30,13 @@ flowchart LR
 
 ## 作品集
 
-用这套流程做过的真实作品，作者 cty41，CC-BY-4.0；只有小橙子走完了完整马良流程。[完整作品集与提示词概括](docs/gallery.zh-CN.md)。
+用这套流程做过的真实作品，作者 cty41（GameMancer 为 loco），CC-BY-4.0；只有小橙子走完了完整马良流程。[完整作品集与提示词概括](docs/gallery.zh-CN.md)。
 
 | **小橙子 · Little Orange** | **游隼 · Falcon** | **亚马逊赤柴 · Red Shiba Amazon** |
 |---|---|---|
 | ![little-orange-sprite](docs/gallery/thumbs/little-orange-sprite.png) | ![falcon](docs/gallery/thumbs/falcon.png) | ![red-shiba-amazon](docs/gallery/thumbs/red-shiba-amazon.png) |
-| **凤头鹰 · Crested goshawk** | **五红柴诗人 · Five-red Chow Poet** | **五红柴诗人（施法） · Five-red Chow Poet, cast** |
-| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![five-red-chow-poet-cast](docs/gallery/thumbs/five-red-chow-poet-cast.png) |
+| **凤头鹰 · Crested goshawk** | **五红柴诗人 · Five-red Chow Poet** | **[GameMancer](examples/gamemancer/README.zh-CN.md) · loco 作品** |
+| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![gamemancer](docs/gallery/thumbs/gamemancer.png) |
 
 ## 快速开始
 

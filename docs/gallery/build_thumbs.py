@@ -20,8 +20,6 @@ SOURCES = {
     "five-red-chow-poet": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/"
                           "poet_five_red_chow_ring_pommel_dao_idle_dr_v03.png",
     "gamemancer": "examples/gamemancer/gamemancer.jpg",
-    "five-red-chow-poet-cast": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/"
-                               "poet_five_red_chow_cast_dr_vertical_guard_grip_v01.png",
     "red-shiba-amazon": "examples/tactics-amazon/doge_hunter_death.png",
 }
 
