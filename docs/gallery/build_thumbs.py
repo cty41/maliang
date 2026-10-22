@@ -22,8 +22,7 @@ SOURCES = {
     "crested-goshawk": "examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png",
     "five-red-chow-poet": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/"
                           "poet_five_red_chow_ring_pommel_dao_idle_dr_v03.png",
-    "red-shiba-amazon": "examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png",
-    "red-shiba-amazon-compare": "examples/tactics-amazon/red-shiba-amazon-poet-tilemap-compare.png",
+    "red-shiba-amazon": "examples/tactics-amazon/doge_hunter_death.png",
 }
 
 

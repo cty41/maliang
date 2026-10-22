@@ -23,7 +23,7 @@
 | **小橙子 · Little Orange**<br>正面 Q 版精灵图 · 线稿平涂<br>提示词概括：整个身体就是卡通橙子，只有很小的 Q 版手脚；呆毛似的叶子，方框眼镜带一块青色反光，歪嘴坏笑，一手托笔记本，另一手指向观众；没有帽衫、文字和标志；纯品红背景便于抠图。原文见 `design/design.json` 的 `prompt` 字段。[示例](../examples/little-orange/README.zh-CN.md) | **游隼 · Falcon**<br>待机鸟类精灵图 · 品红底<br>内容概括（当时的提示词未保留）：真鸟拓扑配紧凑胶囊躯干，双翼收拢贴体，两脚落在脚底基线，短尾。[art-pilot](../examples/art-pilot/README.md) |
 | ![凤头鹰](gallery/thumbs/crested-goshawk.png) | ![五红柴诗人](gallery/thumbs/five-red-chow-poet.png) |
 | **凤头鹰 · Crested goshawk**<br>待机鸟类精灵图 · 品红底<br>内容概括（当时的提示词未保留）：带羽冠的头部，横纹胸羽，双翼收拢，与游隼同一套胶囊躯干。[art-pilot](../examples/art-pilot/README.md) | **五红柴诗人 · Five-red Chow Poet**<br>等距待机精灵图，朝右下 · Tactics<br>内容概括：手持环首刀的红色松狮犬诗人；姿势先用火柴人方案比选再定。[poet-cast](../examples/poet-cast/README.md) |
-| ![亚马逊赤柴](gallery/thumbs/red-shiba-amazon.png) | ![亚马逊与诗人](gallery/thumbs/red-shiba-amazon-compare.png) |
-| **亚马逊赤柴 · Red Shiba Amazon**<br>审核预览，朝左上 · Tactics<br>内容概括（没有找到提示词历史）：Q 版红柴犬战士，持长矛和圆盾。原图只有 128 像素，缩略图会偏糊。[tactics-amazon](../examples/tactics-amazon/ATTRIBUTION.md) | **亚马逊与诗人 · Amazon and Poet on tiles**<br>审核对比板 · Tactics<br>内容概括：亚马逊/猎手与装备齐全的诗人并排站在等距地块上，用来比较比例和画风。[tactics-amazon](../examples/tactics-amazon/ATTRIBUTION.md) |
+| ![亚马逊赤柴](gallery/thumbs/red-shiba-amazon.png) | |
+| **亚马逊赤柴 · Red Shiba Amazon**<br>正式版死亡精灵图 · Tactics<br>内容概括（没有找到提示词历史）：红柴犬亚马逊/猎手倒地，眼睛画成叉，长矛和圆盾落在身旁；胶囊身体，只有脚爪，没有四肢。[tactics-amazon](../examples/tactics-amazon/ATTRIBUTION.md) | |
 
 展示图不代表当前的生产批准。

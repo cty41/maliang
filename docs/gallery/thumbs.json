@@ -50,15 +50,9 @@
     },
     {
       "path": "docs/gallery/thumbs/red-shiba-amazon.png",
-      "sha256": "f47da18ff589b5cf9999e9b41218fdcd2e2686ef1ef54270a55a51b3a7409e7c",
-      "source": "examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png",
-      "sourceSha256": "74014ddcd8a242bc0a34a3b25596a0d96f1c394118e951e19b76118b1c4b2d86"
-    },
-    {
-      "path": "docs/gallery/thumbs/red-shiba-amazon-compare.png",
-      "sha256": "a817ad742c2108bb46e4a5b16cb06ec96cf19449be28f50e3ac4ffb5bbd3f552",
-      "source": "examples/tactics-amazon/red-shiba-amazon-poet-tilemap-compare.png",
-      "sourceSha256": "bfca3829c8572e2cbb1addea034120158ffbdd0e434e61a2d3c31b34ff49137a"
+      "sha256": "f4652fd1461ed79c8754cdd427becbcf00ef9bbda8c788495ee9464a1b8b61c3",
+      "source": "examples/tactics-amazon/doge_hunter_death.png",
+      "sourceSha256": "f5997651edd71cc78b926d5824ef4ac178f28604f5d7c9846f5a81ee0a2b3d19"
     }
   ]
 }
