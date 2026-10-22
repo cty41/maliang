@@ -35,8 +35,8 @@ flowchart LR
 | **小橙子 · Little Orange** | **游隼 · Falcon** | **亚马逊赤柴 · Red Shiba Amazon** |
 |---|---|---|
 | ![little-orange-sprite](docs/gallery/thumbs/little-orange-sprite.png) | ![falcon](docs/gallery/thumbs/falcon.png) | ![red-shiba-amazon](docs/gallery/thumbs/red-shiba-amazon.png) |
-| **凤头鹰 · Crested goshawk** | **五红柴诗人 · Five-red Chow Poet** | **小橙子原画 · Little Orange concept** |
-| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![little-orange-concept](docs/gallery/thumbs/little-orange-concept.png) |
+| **凤头鹰 · Crested goshawk** | **五红柴诗人 · Five-red Chow Poet** | **五红柴诗人（施法） · Five-red Chow Poet, cast** |
+| ![crested-goshawk](docs/gallery/thumbs/crested-goshawk.png) | ![five-red-chow-poet](docs/gallery/thumbs/five-red-chow-poet.png) | ![five-red-chow-poet-cast](docs/gallery/thumbs/five-red-chow-poet-cast.png) |
 
 ## 快速开始
 

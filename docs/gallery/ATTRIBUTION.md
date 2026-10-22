@@ -1,8 +1,8 @@
 # Gallery thumbnail attribution
 
-Every PNG in `thumbs/` is a modified derivative of an image by **cty41**,
-licensed **CC BY 4.0** ([license text](../../LICENSES/CC-BY-4.0.txt)).
-`thumbs.json` lists each source path and SHA-256; the sources keep their own
+Every PNG in `thumbs/` is a modified derivative of an image licensed **CC BY 4.0** ([license text](../../LICENSES/CC-BY-4.0.txt))
+and credited to its author: **cty41** for all except `gamemancer.png`, which is by **loco**
+([examples/gamemancer](../../examples/gamemancer/README.md)). `thumbs.json` lists each source path and SHA-256; the sources keep their own
 attribution files:
 
 - Little Orange: [examples/little-orange](../../examples/little-orange/README.md)

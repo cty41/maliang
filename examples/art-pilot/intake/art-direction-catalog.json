@@ -57,7 +57,7 @@
       "id": "ratio", "prompt": "角色比例？", "priority": 5, "optionsMode": "fixed",
       "when": {"view": ["isometric", "side", "top-down", "front"]},
       "options": [
-        {"id": "capsule", "label": "胶囊体", "references": ["art-pilot 游隼示例"],
+        {"id": "capsule", "label": "胶囊体（圆滚滚的一团，几乎没有四肢）", "references": ["art-pilot 游隼示例"],
          "consequence": "造型最简，系列感强", "risk": "物种区分只能靠耳朵、尾巴、配色等附件",
          "maps": {"target": "contract", "field": "silhouettes", "value": ["capsule"]}},
         {"id": "chibi", "label": "Q 版 2 到 3 头身", "references": ["灌篮高手 Q 版"],
@@ -70,10 +70,10 @@
       "id": "render", "prompt": "游戏内渲染方式？", "priority": 6, "optionsMode": "fixed",
       "when": {"ratio": ["capsule", "chibi", "realistic"]},
       "options": [
-        {"id": "line-flat", "label": "描线平涂", "references": ["王国保卫战"], "consequence": "清晰、批量稳定", "risk": "风险最低"},
+        {"id": "line-flat", "label": "描线平涂（黑线勾边、大色块上色，像卡通）", "references": ["王国保卫战"], "consequence": "清晰、批量稳定", "risk": "风险最低"},
         {"id": "pixel", "label": "像素", "references": ["八方旅人"], "consequence": "复古辨识度高", "risk": "生图时像素网格不稳定，需要后处理"},
-        {"id": "painterly", "label": "厚涂", "references": ["暗黑破坏神 2"], "consequence": "质感强", "risk": "小尺寸难看清，批量时风格难统一"},
-        {"id": "ink-wash", "label": "水墨淡彩", "references": ["轩辕剑3"], "consequence": "东方气质强", "risk": "作为游戏内资产时透明边缘难处理"}
+        {"id": "painterly", "label": "厚涂（像油画一层层堆色，有体积和光影）", "references": ["暗黑破坏神 2"], "consequence": "质感强", "risk": "小尺寸难看清，批量时风格难统一"},
+        {"id": "ink-wash", "label": "水墨淡彩（毛笔墨线加淡淡的水彩）", "references": ["轩辕剑3"], "consequence": "东方气质强", "risk": "作为游戏内资产时透明边缘难处理"}
       ]
     },
     {
@@ -90,13 +90,13 @@
       "id": "concept-style", "prompt": "原画风格？", "priority": 8, "optionsMode": "suggest",
       "when": {"purpose": ["concept-only"], "split": ["dual"]}, "whenMode": "any",
       "options": [
-        {"id": "classical-line", "label": "古典线描加淡彩", "references": ["轩辕剑3", "皇名月"],
+        {"id": "classical-line", "label": "古典线描加淡彩（先用细墨线画清造型，再薄薄上色）", "references": ["轩辕剑3", "皇名月"],
          "consequence": "设定信息清楚，便于提炼认人特征", "risk": "氛围感弱于厚涂",
          "maps": {"target": "styleGuide", "field": "rules[]", "value": {"id": "ink-line-first", "instruction": "Fine ink line defines every form before color.", "method": "human", "required": true}}},
-        {"id": "ink-watercolor", "label": "水墨水彩，大量留白", "references": ["灌篮高手彩稿"],
+        {"id": "ink-watercolor", "label": "水墨水彩，大量留白（笔触松、画面留空，更写意）", "references": ["灌篮高手彩稿"],
          "consequence": "东方气质强，笔触松弛", "risk": "细节少，服饰结构可能看不清",
          "maps": {"target": "styleGuide", "field": "rules[]", "value": {"id": "loose-ink-wash", "instruction": "Loose ink and watercolor strokes with generous white space.", "method": "human", "required": true}}},
-        {"id": "painterly-promo", "label": "厚涂氛围（宣传向）", "references": ["八方旅人2 宣传图"],
+        {"id": "painterly-promo", "label": "厚涂氛围（宣传向，重光影和气氛，像海报）", "references": ["八方旅人2 宣传图"],
          "consequence": "海报和封面表现力最强", "risk": "不适合作为设定图，角色细节被氛围吞掉",
          "maps": {"target": "styleGuide", "field": "rules[]", "value": {"id": "atmospheric-paint", "instruction": "Painterly atmosphere with smoky ink edges.", "method": "human", "required": true}}}
       ]
@@ -114,9 +114,9 @@
       "id": "palette", "prompt": "色彩基调？", "priority": 10, "optionsMode": "suggest",
       "when": {"purpose": ["concept-only"], "split": ["dual", "single"]}, "whenMode": "any",
       "options": [
-        {"id": "bright", "label": "高饱和明快", "references": ["王国保卫战"], "consequence": "可爱、醒目", "risk": "容易显得廉价"},
-        {"id": "muted", "label": "低饱和古朴", "references": ["轩辕剑3"], "consequence": "沉稳、有年代感", "risk": "小尺寸下单位不够醒目"},
-        {"id": "dusk", "label": "暮色夜景", "references": ["空洞骑士"], "consequence": "氛围强", "risk": "单位和背景对比度难控制"}
+        {"id": "bright", "label": "高饱和明快（颜色鲜艳亮丽）", "references": ["王国保卫战"], "consequence": "可爱、醒目", "risk": "容易显得廉价"},
+        {"id": "muted", "label": "低饱和古朴（颜色偏灰偏旧）", "references": ["轩辕剑3"], "consequence": "沉稳、有年代感", "risk": "小尺寸下单位不够醒目"},
+        {"id": "dusk", "label": "暮色夜景（昏暗背景，靠光点突出主体）", "references": ["空洞骑士"], "consequence": "氛围强", "risk": "单位和背景对比度难控制"}
       ]
     },
     {

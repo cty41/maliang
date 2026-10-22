@@ -363,7 +363,7 @@ def test_readme_gallery_links_existing_images_and_credits_sources():
         teaser = body.split(heading, 1)[1].split("\n## ", 1)[0]
         assert page in teaser and "CC-BY-4.0" in teaser, readme
         full = text(ROOT / page)
-        for source, base, minimum in ((teaser, ROOT, 4), (full, ROOT / "docs", 7)):
+        for source, base, minimum in ((teaser, ROOT, 4), (full, ROOT / "docs", 6)):
             images = re.findall(r"(?:src=\"|!\[[^\]]*\]\()([^\")\s]+)", source)
             assert len(images) >= minimum, (readme, page)
             for image in images:
@@ -403,6 +403,22 @@ def test_gallery_thumbnail_manifest_matches_sources_and_files():
     for item in manifest["thumbs"]:
         for key, path in (("sourceSha256", item["source"]), ("sha256", item["path"])):
             assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == item[key], path
+
+
+def test_gamemancer_illustration_is_credited_to_loco_in_gallery():
+    for readme in ("README.md", "README.zh-CN.md"):
+        body = text(ROOT / "examples/gamemancer" / readme)
+        assert "loco" in body and "CC-BY-4.0" in body and "cty41" not in body, readme
+    assert (ROOT / "examples/gamemancer/gamemancer.jpg").is_file()
+    assert (ROOT / "docs/gallery/thumbs/gamemancer.png").is_file()
+    reuse = text(ROOT / "REUSE.toml")
+    assert 'path = ["examples/gamemancer/**", "docs/gallery/thumbs/gamemancer.png"]' in reuse
+    assert 'SPDX-FileCopyrightText = "loco"' in reuse
+    for page in ("docs/gallery.md", "docs/gallery.zh-CN.md"):
+        body = text(ROOT / page)
+        assert "gallery/thumbs/gamemancer.png" in body and "loco" in body and "examples/gamemancer" in body, page
+    attribution = text(ROOT / "docs/gallery/ATTRIBUTION.md")
+    assert "loco" in attribution and "examples/gamemancer" in attribution
 
 
 def test_tactics_amazon_assets_match_manifest_hashes():

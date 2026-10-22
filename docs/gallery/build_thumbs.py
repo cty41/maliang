@@ -15,13 +15,13 @@ MARGIN = 16
 KEYED = {"falcon", "crested-goshawk"}
 SOURCES = {
     "little-orange-sprite": "examples/little-orange/candidates/orange-front-003-sprite.png",
-    "little-orange-concept": "examples/little-orange/concept/base-v2.jpg",
-    "little-orange-001": "examples/little-orange/candidates/orange-front-001.jpg",
-    "little-orange-003": "examples/little-orange/candidates/orange-front-003.jpg",
     "falcon": "examples/art-pilot/characters/falcon-idle/raw/codex-idle.png",
     "crested-goshawk": "examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png",
     "five-red-chow-poet": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/"
                           "poet_five_red_chow_ring_pommel_dao_idle_dr_v03.png",
+    "gamemancer": "examples/gamemancer/gamemancer.jpg",
+    "five-red-chow-poet-cast": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/"
+                               "poet_five_red_chow_cast_dr_vertical_guard_grip_v01.png",
     "red-shiba-amazon": "examples/tactics-amazon/doge_hunter_death.png",
 }
 

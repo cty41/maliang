@@ -47,3 +47,9 @@ path = ["examples/art-pilot/characters/**/*.png"]
 precedence = "override"
 SPDX-FileCopyrightText = "cty41"
 SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["examples/gamemancer/**", "docs/gallery/thumbs/gamemancer.png"]
+precedence = "override"
+SPDX-FileCopyrightText = "loco"
+SPDX-License-Identifier = "CC-BY-4.0"

@@ -13,24 +13,6 @@
       "sourceSha256": "c4686250f6167533d9ad898fbc4e8fecd14ca3a0bd653097fb899487adb8567f"
     },
     {
-      "path": "docs/gallery/thumbs/little-orange-concept.png",
-      "sha256": "b1f542360a656d2d877107ea34b784255ae2dcaf650ff9f1b7dda6c5430a0070",
-      "source": "examples/little-orange/concept/base-v2.jpg",
-      "sourceSha256": "bbb6203cce19eae738bb1b026ab85700a615f55db7097e0edf225fafdae16099"
-    },
-    {
-      "path": "docs/gallery/thumbs/little-orange-001.png",
-      "sha256": "e4c115bad1909becf3c8f286c14ec61d2c6503ffad7335fb25f712cbb3215e98",
-      "source": "examples/little-orange/candidates/orange-front-001.jpg",
-      "sourceSha256": "a35bf5187bf88cd57846649f03d6d8d2f4d92c92afa5217a09f29505d0c9ea70"
-    },
-    {
-      "path": "docs/gallery/thumbs/little-orange-003.png",
-      "sha256": "120f6a32125e1175ab595d32bfe8609641975679ae6d922f0d75810eec19e871",
-      "source": "examples/little-orange/candidates/orange-front-003.jpg",
-      "sourceSha256": "433881ab6e2d6358d5aedbebe636178e59ca77a90ca0d89056f456096074e868"
-    },
-    {
       "path": "docs/gallery/thumbs/falcon.png",
       "sha256": "8aa5f2edab036ad9570255645b85340fa3dc948cb92f3b5be81bc6ee9857aeb7",
       "source": "examples/art-pilot/characters/falcon-idle/raw/codex-idle.png",
@@ -47,6 +29,18 @@
       "sha256": "cc04d4f90ce77e25fc54fcfeb68b32a70bf8fcf4dd6990dd162a6da2a6c41ac4",
       "source": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_ring_pommel_dao_idle_dr_v03.png",
       "sourceSha256": "e2246e0e6d3a4cea92b85cf7add5ea442366389ac5173490bf0bff2fbf25dfb3"
+    },
+    {
+      "path": "docs/gallery/thumbs/gamemancer.png",
+      "sha256": "1e6cfe4f1cc29a45e600ef61e2a6e0db57a9b6a60d8d8302219099b6d79a471e",
+      "source": "examples/gamemancer/gamemancer.jpg",
+      "sourceSha256": "47511e295d72fff9606c4788efb963b8eac1ca3b02dec3984a909a583ddb7921"
+    },
+    {
+      "path": "docs/gallery/thumbs/five-red-chow-poet-cast.png",
+      "sha256": "a0955d038132f37a9d0da0651ba553b57398d6b2db4fc4c3c947bd77c8fb6d51",
+      "source": "examples/poet-cast/store/Tools/artworks/poet_five_red_chow/calibrated/poet_five_red_chow_cast_dr_vertical_guard_grip_v01.png",
+      "sourceSha256": "7cd072d554222d24c1cc4b357f3220260c01016c47be51d21c34e045d4139883"
     },
     {
       "path": "docs/gallery/thumbs/red-shiba-amazon.png",
