@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "species": "little-orange-programmer",
+    "features": [
+      "round-orange-body",
+      "tilted-leaf-cowlick",
+      "square-glasses-one-glare",
+      "tiny-chibi-hands-feet",
+      "open-laptop"
+    ],
+    "priority": [
+      "round-orange-body",
+      "tilted-leaf-cowlick",
+      "square-glasses-one-glare",
+      "tiny-chibi-hands-feet"
+    ],
+    "forbiddenMirror": []
+  },
+  "topology": {
+    "core": "round-orange-ball-body-with-face",
+    "parts": [
+      {
+        "id": "leaf-stem",
+        "description": "short brown stem and one green leaf tilted to one side on top"
+      },
+      {
+        "id": "glare-glasses",
+        "description": "square-framed glasses, a cyan lens glare hides one eye"
+      },
+      {
+        "id": "chibi-hands-feet",
+        "description": "very tiny Q-version cartoon hands and feet attached directly to the orange"
+      },
+      {
+        "id": "laptop",
+        "description": "small open plain laptop held in one tiny hand, blank lid with no logo"
+      }
+    ],
+    "prohibited": [
+      "hoodie",
+      "clothing",
+      "human-torso",
+      "human-arms-legs",
+      "photoreal-peel",
+      "text-labels",
+      "watermark",
+      "checkerboard-background",
+      "brand-logo"
+    ]
+  },
+  "silhouetteClass": "ball",
+  "visualMoment": [
+    {
+      "view": "F",
+      "state": "idle",
+      "moment": "happy but sharp-tongued: lopsided smirk, one eyebrow raised, one tiny hand holds the laptop and the other points at the viewer",
+      "coreTransform": "idle-upright",
+      "partChanges": []
+    }
+  ],
+  "paletteRoles": {},
+  "targets": {},
+  "references": []
+}

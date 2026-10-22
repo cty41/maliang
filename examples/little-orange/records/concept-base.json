@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "conceptId": "little-orange-base",
+  "characterId": "little-orange",
+  "styleId": "little-orange-line-wash-v1",
+  "form": "base",
+  "species": "anthropomorphic orange programmer",
+  "image": {
+    "path": "concept/base.jpg",
+    "sha256": "467384a8218db9626f4f42b0f5a085d8247503d741743f436aa8b0c1d1f5cf5e"
+  },
+  "imageSize": [
+    864,
+    1152
+  ],
+  "approval": {
+    "status": "rejected",
+    "reviewer": "cty41 <ctyfranky@gmail.com>",
+    "reviewerSource": "git-config",
+    "reviewedAt": "2026-10-22T02:10:55Z",
+    "note": "revise: (1) orange too photorealistic peel wrinkles/spots — want cartoon line-art hand-drawn look; (2) drop hoodie stereotype, keep laptop; (3) body IS the orange with chibi hands and feet, not a humanoid body"
+  }
+}

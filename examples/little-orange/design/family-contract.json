@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "familyId": "little-orange-front-v2",
+  "camera": {
+    "mode": "front",
+    "mirrorAccepted": false,
+    "profile": {
+      "North": "none",
+      "South": "F",
+      "East": "none",
+      "West": "none"
+    }
+  },
+  "silhouettes": [
+    "ball"
+  ],
+  "attachments": [
+    "leaf-stem",
+    "glare-glasses",
+    "chibi-hands-feet",
+    "laptop"
+  ],
+  "drawingRules": [
+    {
+      "id": "cartoon-line-art",
+      "instruction": "Clean cartoon line-art hand-drawn look with flat or simple cel shading; no photoreal peel wrinkles, pores or mottled spots.",
+      "method": "human",
+      "required": true
+    },
+    {
+      "id": "orange-is-body",
+      "instruction": "The body is the round orange itself; only tiny Q-version hands and feet, no hoodie or human torso.",
+      "method": "human",
+      "required": true
+    },
+    {
+      "id": "flat-key-background",
+      "instruction": "Solid flat pure magenta #FF00FF background filling the whole canvas, no checkerboard, no gradient, no shadow on the ground; subject fully inside the canvas with a clear margin.",
+      "method": "human",
+      "required": true
+    },
+    {
+      "id": "canvas-alpha",
+      "instruction": "Output dimensions match; alpha is nonempty; no alpha touches canvas edge.",
+      "method": "alpha-bounds",
+      "required": true
+    }
+  ],
+  "paletteRoles": {
+    "main": "#F7931E",
+    "secondary": "#4CAF50",
+    "outline": "#3A2A1A",
+    "accent": "#3FD3E0"
+  },
+  "targets": {
+    "sourceSize": [
+      1024,
+      1024
+    ],
+    "outputSize": [
+      256,
+      256
+    ],
+    "anchorX": 512,
+    "groundY": 900,
+    "displaySizes": [
+      128,
+      150
+    ],
+    "tolerance": 3,
+    "contextBoard": {
+      "cellSize": [
+        128,
+        128
+      ],
+      "columns": 4
+    }
+  },
+  "statePolicy": {
+    "allowedCoreTransforms": [
+      "idle-upright"
+    ],
+    "allowedPartChanges": []
+  }
+}

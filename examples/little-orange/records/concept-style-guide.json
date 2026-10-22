@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "styleId": "little-orange-line-wash-v1",
+  "track": "concept",
+  "framing": {
+    "subject": "single orange fruit character: the whole body is one round orange, not a humanoid torso",
+    "body": "very chibi: tiny cartoon hands and feet only; expressive promo pose with laptop and pointing finger",
+    "background": "plain light paper; optional faint desk or monitor silhouette; no text or brand marks"
+  },
+  "references": [],
+  "rules": [
+    {"id": "cartoon-line", "instruction": "Clean cartoon line-art hand-drawn look; flat or simple cel shading; no photoreal peel wrinkles, pores, or mottled spots.", "method": "human", "required": true},
+    {"id": "light-wash-bright", "instruction": "Light color wash in bright, saturated cheerful tones.", "method": "human", "required": true},
+    {"id": "orange-is-body", "instruction": "The main body is the orange sphere itself; only add tiny Q-version hands and feet, no separate human torso, arms, or legs.", "method": "human", "required": true},
+    {"id": "markers-visible", "instruction": "Required identity markers stay clearly visible and unobstructed despite the promo pose.", "method": "human", "required": true},
+    {"id": "no-text", "instruction": "No text, letters, logos, watermark, or extra characters.", "method": "human", "required": true}
+  ]
+}

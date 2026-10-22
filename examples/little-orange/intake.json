@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "intakeId": "little-orange-002-r2",
+  "catalogId": "art-pilot-direction-v1",
+  "request": "请为我画一个 小橙子 agent 的形象 它是一个程序员 他快乐又毒舌",
+  "answers": [
+    {
+      "dimension": "purpose",
+      "option": "game-assets",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "game-assets",
+          "label": "游戏内实际使用的资产",
+          "source": "catalog"
+        },
+        {
+          "id": "concept-only",
+          "label": "只要原画",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "dimension",
+      "option": "2d",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "2d",
+          "label": "2D",
+          "source": "catalog"
+        },
+        {
+          "id": "3d",
+          "label": "3D",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "genre",
+      "option": "rpg",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "rpg",
+          "label": "RPG",
+          "source": "catalog"
+        },
+        {
+          "id": "tactics",
+          "label": "战棋",
+          "source": "catalog"
+        },
+        {
+          "id": "platformer",
+          "label": "平台跳跃 / 横版动作",
+          "source": "catalog"
+        },
+        {
+          "id": "tower-defense",
+          "label": "塔防",
+          "source": "catalog"
+        },
+        {
+          "id": "card",
+          "label": "卡牌",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "view",
+      "option": "front",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "isometric",
+          "label": "斜 45 度（isometric）",
+          "source": "catalog"
+        },
+        {
+          "id": "side",
+          "label": "横版侧视",
+          "source": "catalog"
+        },
+        {
+          "id": "top-down",
+          "label": "正上方俯视",
+          "source": "catalog"
+        },
+        {
+          "id": "front",
+          "label": "正面立绘（卡面）",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "ratio",
+      "option": "chibi",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "capsule",
+          "label": "胶囊体",
+          "source": "catalog"
+        },
+        {
+          "id": "chibi",
+          "label": "Q 版 2 到 3 头身",
+          "source": "catalog"
+        },
+        {
+          "id": "realistic",
+          "label": "写实比例",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "render",
+      "option": "line-flat",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "line-flat",
+          "label": "描线平涂",
+          "source": "catalog"
+        },
+        {
+          "id": "pixel",
+          "label": "像素",
+          "source": "catalog"
+        },
+        {
+          "id": "painterly",
+          "label": "厚涂",
+          "source": "catalog"
+        },
+        {
+          "id": "ink-wash",
+          "label": "水墨淡彩",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "split",
+      "option": "dual",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "dual",
+          "label": "分轨：原画另一种风格",
+          "source": "catalog"
+        },
+        {
+          "id": "single",
+          "label": "不分轨：同一种风格",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "concept-style",
+      "option": "classical-line",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "classical-line",
+          "label": "古典线描加淡彩",
+          "source": "catalog"
+        },
+        {
+          "id": "ink-watercolor",
+          "label": "水墨水彩，大量留白",
+          "source": "catalog"
+        },
+        {
+          "id": "painterly-promo",
+          "label": "厚涂氛围（宣传向）",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "derived-use",
+      "option": "promo-first",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "portrait-first",
+          "label": "对话头像优先",
+          "source": "catalog"
+        },
+        {
+          "id": "promo-first",
+          "label": "宣传图优先",
+          "source": "catalog"
+        },
+        {
+          "id": "both",
+          "label": "两者都要",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "palette",
+      "option": "bright",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "bright",
+          "label": "高饱和明快",
+          "source": "catalog"
+        },
+        {
+          "id": "muted",
+          "label": "低饱和古朴",
+          "source": "catalog"
+        },
+        {
+          "id": "dusk",
+          "label": "暮色夜景",
+          "source": "catalog"
+        }
+      ]
+    },
+    {
+      "dimension": "theme",
+      "option": "modern",
+      "source": "catalog-option",
+      "presented": [
+        {
+          "id": "eastern-classical",
+          "label": "东方古典",
+          "source": "catalog"
+        },
+        {
+          "id": "western-fantasy",
+          "label": "西方奇幻",
+          "source": "catalog"
+        },
+        {
+          "id": "modern",
+          "label": "现代",
+          "source": "catalog"
+        }
+      ]
+    }
+  ]
+}

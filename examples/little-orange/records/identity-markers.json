@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "markersId": "little-orange-markers",
+  "characterId": "little-orange",
+  "status": "frozen",
+  "conceptIds": ["little-orange-base-v2"],
+  "markers": [
+    {"id": "orange-body", "description": "The whole character body is one round cartoon orange (not a humanoid torso).", "category": "species-silhouette", "required": true, "capsuleTranslation": "round-orange-body"},
+    {"id": "leaf-cowlick", "description": "Short stem and one green leaf tilted to one side like a cowlick.", "category": "species-silhouette", "required": true, "capsuleTranslation": "tilted-leaf-cowlick"},
+    {"id": "glare-glasses", "description": "Square-framed glasses; a lens glare hides one eye.", "category": "accessory", "required": true, "capsuleTranslation": "square-glasses-one-glare"},
+    {"id": "chibi-limbs", "description": "Very Q-version tiny cartoon hands and feet attached directly to the orange; no hoodie or human body.", "category": "species-silhouette", "required": true, "capsuleTranslation": "tiny-chibi-hands-feet"},
+    {"id": "laptop", "description": "Open laptop held in one tiny hand.", "category": "accessory", "required": false, "capsuleTranslation": "open-laptop"}
+  ],
+  "palette": [
+    {"role": "main", "hex": "#F7931E"},
+    {"role": "leaf", "hex": "#4CAF50"},
+    {"role": "accent", "hex": "#3FD3E0"}
+  ],
+  "tolerance": 40
+}

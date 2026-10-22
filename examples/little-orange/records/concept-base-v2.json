@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "conceptId": "little-orange-base-v2",
+  "characterId": "little-orange",
+  "styleId": "little-orange-line-wash-v1",
+  "form": "base",
+  "species": "cartoon orange fruit programmer (body is the orange)",
+  "image": {
+    "path": "concept/base-v2.jpg",
+    "sha256": "bbb6203cce19eae738bb1b026ab85700a615f55db7097e0edf225fafdae16099"
+  },
+  "imageSize": [
+    864,
+    1152
+  ],
+  "approval": {
+    "status": "approved",
+    "reviewer": "cty41 <ctyfranky@gmail.com>",
+    "reviewerSource": "git-config",
+    "reviewedAt": "2026-10-22T03:13:48Z"
+  }
+}
