@@ -28,6 +28,14 @@ flowchart LR
 图中依次是：你的想法 → 合同 + 草案 → 马良编译简报 → 宿主生图 → 马良绑定并检查 →
 真人审核 → 马良记录采用。合同、草案、候选、采用等术语见[核心概念](docs/concepts.zh-CN.md)。
 
+## 作品集
+
+用这套流程做过的真实作品，作者 cty41，CC-BY-4.0。只有小橙子走完了完整马良流程，其余早于它。
+
+<img src="examples/little-orange/candidates/orange-front-003-sprite.png" width="150" alt="小橙子（已采用的精灵图）" title="小橙子（已采用的精灵图）"> <img src="examples/art-pilot/characters/falcon-idle/raw/codex-idle.png" width="150" alt="游隼" title="游隼"> <img src="examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png" width="150" alt="凤头鹰" title="凤头鹰"> <img src="examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png" width="150" alt="亚马逊赤柴" title="亚马逊赤柴">
+
+[完整作品集与提示词概括](docs/gallery.zh-CN.md).
+
 ## 快速开始
 
 需要 **Windows PowerShell、Python 3.10+ 和 Git**。请安装当前源码：已发布的

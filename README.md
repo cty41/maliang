@@ -30,6 +30,12 @@ flowchart LR
 Terms like contract, draft, candidate, and adoption are explained in
 [concepts](docs/concepts.md).
 
+## Gallery
+
+Real artwork by cty41 under CC-BY-4.0; only Little Orange went through the full flow. [Full gallery with prompt summaries](docs/gallery.md).
+
+<img src="examples/little-orange/candidates/orange-front-003-sprite.png" width="150" alt="Little Orange (adopted sprite)" title="Little Orange (adopted sprite)"> <img src="examples/art-pilot/characters/falcon-idle/raw/codex-idle.png" width="150" alt="Falcon" title="Falcon"> <img src="examples/art-pilot/characters/crested-goshawk-idle/raw/v01-a001.png" width="150" alt="Crested goshawk" title="Crested goshawk"> <img src="examples/tactics-amazon/red_shiba_amazon_ul_mirrored_preview.png" width="150" alt="Red Shiba Amazon" title="Red Shiba Amazon">
+
 ## Quick start
 
 You need **Windows PowerShell, Python 3.10+, and Git**. Install from current

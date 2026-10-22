@@ -354,6 +354,36 @@ def test_skill_lists_absolute_paths_and_viewing_copy_after_each_image():
         assert "previews/<attemptId>" in text(ROOT / runbook)
 
 
+def test_readme_gallery_links_existing_images_and_credits_sources():
+    pairs = (("README.md", "## Gallery", "docs/gallery.md"),
+             ("README.zh-CN.md", "## 作品集", "docs/gallery.zh-CN.md"))
+    for readme, heading, page in pairs:
+        body = text(ROOT / readme)
+        assert heading in body, readme
+        teaser = body.split(heading, 1)[1].split("\n## ", 1)[0]
+        assert page in teaser and "CC-BY-4.0" in teaser, readme
+        full = text(ROOT / page)
+        for source, base, minimum in ((teaser, ROOT, 4), (full, ROOT / "docs", 7)):
+            images = re.findall(r"(?:src=\"|!\[[^\]]*\]\()([^\")\s]+)", source)
+            assert len(images) >= minimum, (readme, page)
+            for image in images:
+                assert (base / image).is_file(), (readme, page, image)
+        for needed in ("examples/little-orange", "examples/tactics-amazon", "falcon-idle",
+                       "crested-goshawk-idle", "CC-BY-4.0"):
+            assert needed in full, (page, needed)
+
+
+def test_tactics_amazon_assets_match_manifest_hashes():
+    import hashlib
+    import json
+    manifest = json.loads(text(ROOT / "examples/tactics-amazon/assets.json"))
+    assert manifest["license"] == "CC-BY-4.0" and manifest["rightsHolder"] == "cty41"
+    assert manifest["assets"]
+    for asset in manifest["assets"]:
+        data = (ROOT / "examples/tactics-amazon" / asset["path"]).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == asset["sha256"] == asset["sourceSha256"]
+
+
 def test_skill_routes_concept_track_and_camera_modes():
     skill = text(ROOT / "skills/maliang-art/SKILL.md")
     assert "concept review" in skill and "--format questions" in skill

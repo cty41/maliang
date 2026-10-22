@@ -1,0 +1,29 @@
+{
+    "schemaVersion":  1,
+    "title":  "Red Shiba Amazon review images",
+    "sourceRepository":  "https://github.com/cty41/tactics",
+    "sourceCommit":  "00b59f5ebca4ec6d2b7c6cca0690a57777c829c1",
+    "sourceManifest":  "Tools/public-release/asset-provenance.json",
+    "rightsHolder":  "cty41",
+    "license":  "CC-BY-4.0",
+    "assets":  [
+                   {
+                       "path":  "red_shiba_amazon_ul_mirrored_preview.png",
+                       "sourcePath":  "Tools/artworks/pipeline/reviews/job-4b305eeeb547c4db-a002/red_shiba_amazon_ul_mirrored_preview.png",
+                       "sha256":  "74014ddcd8a242bc0a34a3b25596a0d96f1c394118e951e19b76118b1c4b2d86",
+                       "sourceSha256":  "74014ddcd8a242bc0a34a3b25596a0d96f1c394118e951e19b76118b1c4b2d86",
+                       "modified":  false,
+                       "provenance":  "project-owned-supporting-derived",
+                       "status":  "approved"
+                   },
+                   {
+                       "path":  "red-shiba-amazon-poet-tilemap-compare.png",
+                       "sourcePath":  "Tools/artworks/pure_run/art_direction/reviews/poet_idle_dr_v09/red-shiba-amazon-poet-tilemap-compare.png",
+                       "sha256":  "bfca3829c8572e2cbb1addea034120158ffbdd0e434e61a2d3c31b34ff49137a",
+                       "sourceSha256":  "bfca3829c8572e2cbb1addea034120158ffbdd0e434e61a2d3c31b34ff49137a",
+                       "modified":  false,
+                       "provenance":  "project-owned-supporting-derived",
+                       "status":  "approved"
+                   }
+               ]
+}
