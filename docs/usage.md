@@ -67,7 +67,8 @@ python -I examples/art-pilot/scripts/production.py --help
 
 It supports preparation (`prepare`), completion/failure (`complete`/`fail`),
 import, derivation (`derive`), technical review (`technical`), human review
-(`review`), and adoption (`adopt`). Global `--project` precedes the subcommand;
+(`review` with a decision file, or `review-quick` for a pass/reject choice relayed
+from chat), and adoption (`adopt`). Global `--project` precedes the subcommand;
 input paths are relative to that project root. Follow the
 [runbook](../examples/art-pilot/docs/runbook.en.md) for artifacts and real-project
 templates rather than treating the synthetic exercise as a production tutorial.

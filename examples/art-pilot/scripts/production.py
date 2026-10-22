@@ -20,6 +20,22 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def default_reviewer(root):
+    import getpass
+    import subprocess
+
+    def git(key):
+        try:
+            done = subprocess.run(["git", "-C", str(root), "config", key], capture_output=True, text=True, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        return done.stdout.strip() if done.returncode == 0 else ""
+    name, email = git("user.name"), git("user.email")
+    if name:
+        return f"{name} <{email}>" if email else name
+    return getpass.getuser()
+
+
 def digest(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -161,11 +177,18 @@ def generation_provider(store, candidate):
     return store.load_prepared(candidate["attemptId"])["invocation"]["provider"]
 
 
-def check_host_lock(root, store, character, provider, model, parent):
+def check_host_lock(root, store, character, provider, model, parent, new_character=False):
     """One character keeps the image host and model of its first generation request."""
     if not isinstance(character, str) or not CHARACTER.fullmatch(character):
         raise ValueError("character must be a portable identifier")
+    if provider.lower().startswith("cursor") and provider != CURSOR_PROVIDER:
+        raise ValueError(f"Cursor host provider must be exactly {CURSOR_PROVIDER!r}")
     lock_path = source(root, f"production/host-locks/{character}.json")
+    if not lock_path.exists() and not new_character:
+        existing = sorted(p.stem for p in lock_path.parent.glob("*.json")) if lock_path.parent.exists() else []
+        if existing:
+            raise ValueError(f"character {character!r} has no lock; existing characters are {existing}. "
+                             "Pass --new-character only if this is really a new character")
     if lock_path.exists():
         lock = read_json(root, f"production/host-locks/{character}.json")
         if (lock["provider"], lock["model"]) != (provider, model):
@@ -273,6 +296,48 @@ def cursor_complete(root, store, attempt, output):
     return bind_success(root, store, prepared, receipt_path, image)
 
 
+def preview(root, store, attempt):
+    """Write a correctly named viewing copy and report absolute paths; records no event."""
+    candidate = store.load_candidate(attempt)
+    data = source(root, candidate["artifact"]["path"]).read_bytes()
+    extension = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}.get(decoded_format(data), "bin")
+    copy = source(root, f"previews/{attempt}.{extension}")
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.write_bytes(data)
+    origin = candidate
+    while origin["recordType"] == "derived":
+        origin = store.load_candidate(origin["parent"]["attemptId"])
+    outputs = sorted((root / "production/cursor-outputs").glob(f"{origin['attemptId']}.*"))
+    return {"attemptId": attempt, "eventId": candidate["eventId"],
+            "candidate": {"path": str(source(root, candidate["artifact"]["path"])), "sha256": candidate["artifact"]["sha256"]},
+            "hostOutputCopy": str(outputs[0]) if outputs else None,
+            "viewingCopy": {"path": str(copy), "evidence": False}}
+
+
+def record_human_decision(root, store, candidate, decision, evidence_path):
+    if (decision.get("actorType") != "human" or decision.get("candidate") != store.binding(candidate)
+            or decision.get("identityChecklist") != candidate["identityChecklist"]
+            or not isinstance(decision.get("statement"), str) or not decision["statement"].strip()):
+        raise ValueError("actual human statement must bind the candidate and compiled identity checklist")
+    return store.record_review(candidate, reviewer=decision["reviewer"], actor_type="human",
+        decision=decision["decision"], checklist=decision["checklist"],
+        evidence=freeze_artifact(root, evidence_path), decided_at=decision["decidedAt"])
+
+
+def revisions(root, character):
+    """Rejected chat-relayed reviews of one character: prompt material, not record changes."""
+    notes = []
+    for lock in sorted((root / "production/host-locks/attempts").glob("*.json")):
+        if read_json(root, f"production/host-locks/attempts/{lock.name}")["character"] != character:
+            continue
+        for path in sorted((root / f"production/quick-reviews/{lock.stem}").glob("*.json")):
+            decision = read_json(root, path.relative_to(root).as_posix())
+            if decision["decision"] == "reject":
+                notes.append({"attemptId": lock.stem, "decidedAt": decision["decidedAt"],
+                              "statement": decision["statement"], **decision["revisionNotes"]})
+    return sorted(notes, key=lambda n: n["decidedAt"])
+
+
 def packet_data(root, relative, contract_path, draft_path):
     data = source(root, relative).read_bytes()
     packet = json.loads(data)
@@ -302,6 +367,8 @@ def main(argv=None):
     prepare.add_argument("--parent")
     prepare.add_argument("--instruction")
     prepare.add_argument("--character", required=True, help="character ID; locks the image host of its first request")
+    prepare.add_argument("--new-character", action="store_true",
+                         help="confirm an unlocked character ID when other characters already have locks")
     cursor_packet_cmd = commands.add_parser("cursor-packet")
     cursor_packet_cmd.add_argument("--attempt", required=True)
     cursor_complete_cmd = commands.add_parser("cursor-complete")
@@ -336,6 +403,17 @@ def main(argv=None):
     review = commands.add_parser("review")
     review.add_argument("--attempt", required=True)
     review.add_argument("--decision-file", required=True)
+    quick = commands.add_parser("review-quick", help="record a human choice relayed from the host chat")
+    quick.add_argument("--attempt", required=True)
+    quick.add_argument("--choice", choices=["pass", "reject"], required=True)
+    quick.add_argument("--quote", required=True, help="the user's own words for this choice")
+    quick.add_argument("--issues", default="", help="comma-separated human acceptance IDs the user marked unsatisfied")
+    quick.add_argument("--note", default="", help="the user's free-form improvement request")
+    quick.add_argument("--reviewer", help="default: git user.name <user.email>, else the OS user")
+    view = commands.add_parser("preview", help="write previews/<attempt>.<ext> and print absolute paths")
+    view.add_argument("--attempt", required=True)
+    notes = commands.add_parser("revisions", help="list rejected chat-review issues and notes of a character")
+    notes.add_argument("--character", required=True)
     adopt = commands.add_parser("adopt")
     adopt.add_argument("--attempt", required=True)
     adopt.add_argument("--review", required=True, help="project-relative human review event JSON")
@@ -372,7 +450,7 @@ def main(argv=None):
                 raise ValueError("edit requires both parent and instruction")
             inputs = []
             parent = store.load_candidate(args.parent) if args.parent else None
-            check_host_lock(root, store, args.character, args.provider, args.model, parent)
+            check_host_lock(root, store, args.character, args.provider, args.model, parent, args.new_character)
             if parent is not None:
                 inputs.append({"artifact": parent["artifact"], "roles": ["edit-source"]})
             for item in packet["imageInputs"]:
@@ -438,14 +516,32 @@ def main(argv=None):
                 evaluator="alpha-bounds", evidence=freeze_artifact(root, path)))
     elif args.command == "review":
         candidate = store.load_candidate(args.attempt)
-        decision = read_json(root, args.decision_file)
-        if (decision.get("actorType") != "human" or decision.get("candidate") != store.binding(candidate)
-                or decision.get("identityChecklist") != candidate["identityChecklist"]
-                or not isinstance(decision.get("statement"), str) or not decision["statement"].strip()):
-            raise ValueError("actual human statement must bind the candidate and compiled identity checklist")
-        result = store.record_review(candidate, reviewer=decision["reviewer"], actor_type="human",
-            decision=decision["decision"], checklist=decision["checklist"],
-            evidence=freeze_artifact(root, args.decision_file), decided_at=decision["decidedAt"])
+        result = record_human_decision(root, store, candidate, read_json(root, args.decision_file), args.decision_file)
+    elif args.command == "review-quick":
+        candidate = store.load_candidate(args.attempt)
+        human = [item["id"] for item in candidate["requiredAcceptance"] if item["method"] == "human"]
+        issues = [i.strip() for i in args.issues.split(",") if i.strip()]
+        unknown = [i for i in issues if i not in human]
+        if unknown:
+            raise ValueError(f"unknown human acceptance IDs {unknown}; choose from {human}")
+        if not args.quote.strip():
+            raise ValueError("quote the user's own words for this choice")
+        if args.choice == "pass" and (issues or args.note.strip()):
+            raise ValueError("a pass cannot carry unsatisfied issues or improvement notes")
+        status = "pass" if args.choice == "pass" else "pending"
+        checklist = {i: "fail" if i in issues else status for i in human}
+        decision = {"actorType": "human", "capturedVia": "host-chat", "candidate": store.binding(candidate),
+            "identityChecklist": candidate["identityChecklist"], "reviewer": args.reviewer or default_reviewer(root),
+            "decision": "adopt" if args.choice == "pass" else "reject", "checklist": checklist,
+            "statement": f"Choice relayed by the host agent from chat; user said: {args.quote.strip()}",
+            "revisionNotes": {"issues": issues, "note": args.note.strip()}, "decidedAt": now()}
+        path = f"production/quick-reviews/{args.attempt}/{digest(canonical_bytes(decision))}.json"
+        write_immutable_json(root, path, decision)
+        result = record_human_decision(root, store, candidate, decision, path)
+    elif args.command == "preview":
+        result = preview(root, store, args.attempt)
+    elif args.command == "revisions":
+        result = revisions(root, args.character)
     else:
         candidate = store.load_candidate(args.attempt)
         review = read_json(root, args.review)

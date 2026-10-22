@@ -154,6 +154,31 @@ class ProductionCLI(unittest.TestCase):
         self.assertIn("unknown", self.cli("acceptance", "--design", "design.json", ok=False))
         self.cli("prepare", "--required-human", "identity", ok=False)
 
+    def test_review_quick_records_chat_choice_without_inventing_passes(self):
+        candidate = self.complete("quick", self.prepare("quick"))
+        rejected = self.cli("review-quick", "--attempt", "quick", "--choice", "reject", "--issues", "pose,palette",
+                            "--note", "smirk reads as angry", "--quote", "不通过", "--reviewer", "fixture-human")
+        self.assertEqual(rejected["decision"], "reject")
+        self.assertEqual(rejected["checklist"]["pose"], "fail")
+        self.assertEqual(rejected["checklist"]["palette"], "fail")
+        self.assertEqual(rejected["checklist"]["identity"], "pending")
+        self.assertNotIn("pass", rejected["checklist"].values())
+        evidence = json.loads((self.root / rejected["sourceEvidence"]["path"]).read_text(encoding="utf-8"))
+        self.assertEqual(evidence["capturedVia"], "host-chat")
+        self.assertEqual(evidence["revisionNotes"], {"issues": ["pose", "palette"], "note": "smirk reads as angry"})
+        self.assertIn("不通过", evidence["statement"])
+        self.cli("review-quick", "--attempt", "quick", "--choice", "reject", "--issues", "nonexistent", ok=False)
+        self.cli("review-quick", "--attempt", "quick", "--choice", "pass", ok=False)
+        self.cli("review-quick", "--attempt", "quick", "--choice", "pass", "--issues", "pose", "--quote", "ok", ok=False)
+        self.cli("review-quick", "--attempt", "quick", "--choice", "reject", "--quote", " ", ok=False)
+        technical = self.cli("technical", "--attempt", "quick")
+        passed = self.cli("review-quick", "--attempt", "quick", "--choice", "pass", "--quote", "通过")
+        self.assertTrue(passed["reviewer"].strip())
+        self.assertEqual(set(passed["checklist"].values()), {"pass"})
+        adoption = self.cli("adopt", "--attempt", "quick", "--asset", "bird", "--review", self.event_path(passed),
+                            "--result", self.event_path(technical[0]))
+        self.assertEqual(adoption["candidate"]["attemptId"], candidate["attemptId"])
+
     def test_missing_technical_wrong_candidate_and_direct_adoption(self):
         v1 = self.complete("v1", self.prepare("v1"))
         original = (self.root / v1["artifact"]["path"]).read_bytes()
@@ -342,7 +367,10 @@ class ProductionCLI(unittest.TestCase):
         self.assertFalse(self.claimed("named-model"))
         self.prepare("second")
         self.assertEqual(self.lock("bird")["firstAttemptId"], "first")
-        self.complete("cat", self.prepare("cat", character="cat", provider="other-synthetic"))
+        self.prepare("typo", character="brid", ok=False)
+        self.assertFalse(self.claimed("typo"))
+        self.assertFalse((self.root / "production/host-locks/brid.json").exists())
+        self.complete("cat", self.prepare("cat", "--new-character", character="cat", provider="other-synthetic"))
         self.prepare("cross-edit", "--parent", "cat", "--instruction", "change wing", ok=False)
         self.assertFalse(self.claimed("cross-edit"))
         self.cli("derive", "--attempt", "first-copy", "--parent", "first", "--operation", "copy")
@@ -351,10 +379,48 @@ class ProductionCLI(unittest.TestCase):
                      character="cat", provider="other-synthetic", ok=False)
         self.assertEqual(first["attemptId"], "first")
 
+    def test_cursor_like_provider_must_be_cursor_desktop(self):
+        self.prepare("loose-cursor", character="cursor-bird", provider="cursor", ok=False)
+        self.assertFalse(self.claimed("loose-cursor"))
+
+    def test_preview_writes_viewing_copy_and_reports_absolute_paths(self):
+        candidate = self.complete("view", self.prepare("view"))
+        report = self.cli("preview", "--attempt", "view")
+        copy = Path(report["viewingCopy"]["path"])
+        self.assertTrue(copy.is_absolute())
+        self.assertEqual(copy.name, "view.png")
+        self.assertEqual(copy.read_bytes(), (self.root / candidate["artifact"]["path"]).read_bytes())
+        self.assertEqual(report["candidate"]["sha256"], candidate["artifact"]["sha256"])
+        self.assertTrue(Path(report["candidate"]["path"]).is_absolute())
+        self.assertFalse(report["viewingCopy"]["evidence"])
+        events = sorted(p.name for p in (self.root / "production/events").iterdir())
+        self.cli("preview", "--attempt", "view")
+        self.assertEqual(events, sorted(p.name for p in (self.root / "production/events").iterdir()))
+
+    def test_revisions_lists_rejected_quick_review_notes_for_character(self):
+        self.complete("r1", self.prepare("r1"))
+        self.cli("review-quick", "--attempt", "r1", "--choice", "reject", "--issues", "pose",
+                 "--note", "less angry", "--quote", "不通过", "--reviewer", "fixture-human")
+        notes = self.cli("revisions", "--character", "bird")
+        self.assertEqual([(n["attemptId"], n["issues"], n["note"]) for n in notes], [("r1", ["pose"], "less angry")])
+
+    def test_default_reviewer_falls_back_without_git_identity(self):
+        import os
+        empty = self.root / "empty.gitconfig"
+        empty.write_text("", encoding="utf-8")
+        self.complete("nogit", self.prepare("nogit"))
+        env = {**os.environ, "GIT_CONFIG_GLOBAL": str(empty), "GIT_CONFIG_NOSYSTEM": "1"}
+        done = subprocess.run([sys.executable, "-I", str(CLI), "--project", str(self.root), "review-quick",
+                               "--attempt", "nogit", "--choice", "reject", "--quote", "no"],
+                              cwd=self.root.parent, capture_output=True, text=True, env=env)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        import getpass
+        self.assertEqual(json.loads(done.stdout)["reviewer"], getpass.getuser())
+
     def cursor_prepared(self, attempt, params=None):
         self.write("cursor-params.json", {"aspect_ratio": "1:1"} if params is None else params)
         return self.cli("prepare", "--attempt", attempt, "--design", "design.json", "--parameters", "cursor-params.json",
-                        "--provider", "cursor-desktop", "--character", "cursor-bird")
+                        "--provider", "cursor-desktop", "--character", "cursor-bird", "--new-character")
 
     def cursor_output(self, attempt, image=None):
         out = self.root / "host-assets"

@@ -261,9 +261,9 @@ def test_skill_repository_resource_paths_exist():
 ])
 def test_six_review_scenarios_have_explicit_guidance(scenario, required_guidance):
     """Guard reviewed instructions only; this does not simulate an agent or a host."""
-    source = text(SKILL)
+    source = " ".join(text(SKILL).split())
     for phrase in required_guidance:
-        assert phrase in source, (scenario, phrase)
+        assert " ".join(phrase.split()) in source, (scenario, phrase)
 
 
 def test_execution_and_evidence_boundaries():
@@ -342,6 +342,16 @@ def test_skill_triggers_on_conversation_intent_and_announces_route():
     assert "earlier in this conversation" in body
     assert "Before calling any image tool" in body
     assert "never switch silently to a plain image tool" in body
+
+
+def test_skill_lists_absolute_paths_and_viewing_copy_after_each_image():
+    body = " ".join(text(SKILL).split())
+    assert "absolute path" in body
+    assert "preview --attempt" in body
+    assert "previews/<attemptId>" in body
+    assert "viewing copy is not evidence" in body
+    for runbook in ("examples/art-pilot/docs/runbook.en.md", "examples/art-pilot/docs/runbook.md"):
+        assert "previews/<attemptId>" in text(ROOT / runbook)
 
 
 def test_skill_routes_concept_track_and_camera_modes():

@@ -98,7 +98,7 @@ Edits still require their own editing-task contract / Draft / design, plus `--pa
 
 Neither the library nor the scripts automatically call image services. The executor must read `production/attempts/<id>/prepared.json`, actually submit the frozen prompt, parameters, and input images, and retain verifiable tool records. The Codex provider execution bridge remains unimplemented; login is not a prerequisite for offline regressions.
 
-`--character` is required. A character's first prepare writes the immutable `production/host-locks/<character>.json`; every later prepare for that character must use the same `--provider` and `--model`; `--parent` must belong to the same character and generation host; derive inherits the parent's character. There is no force-switch flag: start a new character to change hosts.
+`--character` is required. A character's first prepare writes the immutable `production/host-locks/<character>.json`; every later prepare for that character must use the same `--provider` and `--model`; `--parent` must belong to the same character and generation host; derive inherits the parent's character. There is no force-switch flag: start a new character to change hosts. When other characters already have locks, an unlocked character ID fails unless `--new-character` confirms it is really new, so a typo cannot silently create a lock. A provider name starting with `cursor` must be exactly `cursor-desktop`.
 
 ### Cursor execution (semi-automatic)
 
@@ -132,6 +132,23 @@ python -I examples/art-pilot/scripts/production.py --project work/art-pilot deri
 ```
 
 The human decision-file must originate from a real decision: `actorType: "human"`, a real reviewer, the candidate's complete eventId/attemptId/artifact, `identityChecklist: ["identity"]`, a nonempty genuine statement, a real timezone-aware decidedAt, adopt/reject/pending, and pass/fail/pending/unsupported for every required human item. Agents must not fabricate real human pass values to advance the workflow.
+
+Before review, report every image by absolute path with `preview`:
+
+```powershell
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot preview --attempt bird-001
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot revisions --character bird
+```
+
+`preview` writes `work/<project>/previews/<attemptId>.<ext>` with the real format's extension and prints the absolute paths of the candidate (with sha256), the host output copy, and the viewing copy; it records no event. The viewing copy is not evidence; review binds the candidate's sha256. `revisions` lists the issues and notes of every rejected `review-quick` decision for a character, as prompt material for the next request.
+
+For a chat-relayed choice, use `review-quick` instead of a decision file:
+
+```powershell
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot review-quick --attempt bird-001 --choice reject --issues pose,palette --note "expression too angry" --quote "not pass, the face is off"
+```
+
+`--choice` is pass or reject; `--quote` (the user's own words) is required. `--issues` accepts only the candidate's required human acceptance IDs and marks them `fail`; on reject every other item stays `pending`, and on pass every item becomes `pass` (pass cannot carry issues or notes). The reviewer defaults to git `user.name <user.email>` (else the OS user, or `--reviewer`) and the time is the current time. The frozen evidence under `production/quick-reviews/` records `capturedVia: "host-chat"` and `revisionNotes`, so a report can tell it apart from a hand-written decision file; it is the agent's relay of a real chat choice, a weaker provenance than a file the human wrote. Revision notes are prompt input for the next attempt, not an automatic change to frozen markers or style rules.
 
 Adoption command template (replace angle-bracket placeholders with actual event paths; do not run verbatim):
 

@@ -59,7 +59,7 @@ python -I examples/art-pilot/scripts/production.py --help
 ```
 
 它支持准备（`prepare`）、完成/失败（`complete`/`fail`）、导入（`import`）、
-派生（`derive`）、技术审核（`technical`）、人工审核（`review`）和采用（`adopt`）。
+派生（`derive`）、技术审核（`technical`）、人工审核（`review` 用 decision file；`review-quick` 记录对话里转述的通过/不通过选择）和采用（`adopt`）。
 全局 `--project` 放在子命令之前；输入路径相对该项目根目录。
 产物说明和真实项目模板以[运行手册](../examples/art-pilot/docs/runbook.md) 为准，
 不要把合成练习当成生产教程。实际生成/编辑仍由外部宿主执行。

@@ -110,7 +110,7 @@ prepare 重新编译合同 / Draft 并核对 prompt、任务、输入顺序/职�
 
 库和脚本不自动调用图像服务。执行器必须读取 `production/attempts/<id>/prepared.json`，真实提交冻结 prompt、参数和输入图，并保留可核验工具记录。Codex provider 执行桥仍未实现，登录不是离线回归先决条件。
 
-`--character` 必填。角色首次 prepare 写入不可覆盖的 `production/host-locks/<角色>.json`，此后该角色所有 prepare 的 `--provider` 与 `--model` 必须一致；`--parent` 必须属于同一角色且同一生图宿主；derive 继承父角色。没有强制切换开关，换宿主请新建角色。
+`--character` 必填。角色首次 prepare 写入不可覆盖的 `production/host-locks/<角色>.json`，此后该角色所有 prepare 的 `--provider` 与 `--model` 必须一致；`--parent` 必须属于同一角色且同一生图宿主；derive 继承父角色。没有强制切换开关，换宿主请新建角色。项目里已有其他角色的锁时，未加锁的角色 ID 会报错，除非用 `--new-character` 确认确实是新角色，这样拼错的角色名不会静默新建锁。以 `cursor` 开头的 provider 必须正好是 `cursor-desktop`。
 
 ### Cursor 执行（半自动）
 
@@ -144,6 +144,23 @@ python -I examples/art-pilot/scripts/production.py --project work/art-pilot deri
 ```
 
 人审 decision-file 必须由真实决定产生：`actorType: "human"`、真实 reviewer、候选完整 eventId/attemptId/artifact、`identityChecklist: ["identity"]`、非空真实 statement、真实带时区 decidedAt、adopt/reject/pending，以及全部必需 human 项的 pass/fail/pending/unsupported。Agent 不得为了推进流程编写真实 human pass。
+
+审核前用 `preview` 以绝对路径列出每张图：
+
+```powershell
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot preview --attempt bird-001
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot revisions --character bird
+```
+
+`preview` 按真实格式取扩展名写入 `work/<project>/previews/<attemptId>.<ext>`，并打印候选（含 sha256）、宿主输出副本和查看副本的绝对路径，不写任何事件。查看副本不是证据，审核仍绑定候选的 sha256。`revisions` 列出该角色所有被拒 `review-quick` 决定的 issues 和 note，作为下一次请求的 prompt 素材。
+
+对话里转述的选择用 `review-quick`，不需要 decision file：
+
+```powershell
+python -I examples/art-pilot/scripts/production.py --project work/art-pilot review-quick --attempt bird-001 --choice reject --issues pose,palette --note "expression too angry" --quote "not pass, the face is off"
+```
+
+`--choice` 为 pass 或 reject，`--quote`（用户原话）必填。`--issues` 只接受该候选的必需 human 验收 ID，记为 `fail`；reject 时其余项保持 `pending`，pass 时全部记 `pass`（pass 不能带 issues 或 note）。reviewer 默认取 git `user.name <user.email>`，没有则取系统用户，也可用 `--reviewer` 指定；时间取当前时间。冻结在 `production/quick-reviews/` 的证据记录 `capturedVia: "host-chat"` 与 `revisionNotes`，报告可据此区分手写 decision file：这是 agent 对真实对话选择的转述，来源强度低于人亲手写的文件。修订意见只作为下一次请求的 prompt 来源，不会自动改动冻结的 markers 或 style 规则。
 
 采用命令模板（尖括号替换为实际事件路径，不要原样执行）：
 

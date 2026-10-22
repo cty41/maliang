@@ -150,7 +150,9 @@ python -I examples/art-pilot/scripts/production.py --project work/art-pilot acce
 ```
 
 `--character` pins the character to one provider and model for its whole
-lifecycle; never switch hosts mid-character. With `cursor-desktop`, always use
+lifecycle; never switch hosts mid-character. Reuse the exact character ID; a
+new unlocked ID in a project that already has locks needs `--new-character`,
+so never add that flag to get past a typo. With `cursor-desktop`, always use
 `cursor-packet` output as the GenerateImage call (do not transcribe the prompt),
 then `cursor-complete --output` or `cursor-fail --message`.
 Replace `actual-provider` with the selected real provider before preparing; an
@@ -191,12 +193,33 @@ If the host cannot display it, provide the path and wait for the human to inspec
 it elsewhere; do not claim to have shown it. Technical checks do not establish
 style, identity, projection, pose, or visual quality.
 
-Ask the real reviewer to choose adopt, reject, or pending and decide every required
-human item. Record only their actual decision through `review`, following the
-runbook's decision-file schema. An agent cannot be the human reviewer or invent
-human pass entries. “I like it” is a preference, not complete adoption evidence.
-Without explicit, exact-candidate human approval, **do not adopt**; retain pending
-or rejected status. Synthetic human fixtures are test data, never real approval.
+After every `cursor-complete`, `complete`, or `derive`, run `preview --attempt`
+and list its absolute path output whether or not inline display works: the
+host output copy, the frozen candidate path with its attempt ID and sha256, and
+the viewing copy at `work/<project>/previews/<attemptId>.<ext>`. The viewing
+copy is not evidence; review and adoption still bind the candidate's sha256.
+
+Only the real reviewer decides. Do not ask them to write a decision file or
+name themselves. Ask one choice: pass or not pass. On not pass, offer the
+required human acceptance IDs (style, identity, pose, palette, and so on) as an
+optional multi-select plus an optional free-form improvement note; technical
+problems such as a fake background or a logo go in the note. Record the answer
+with `review-quick`, quoting the user's own words in `--quote`; it fills
+reviewer and time and marks only the chosen issues `fail`, leaving the rest
+`pending`. Use `review` with a decision file only when the user wants per-item
+judgments.
+
+Pass means the user picked pass, or explicitly said accept, approve, adopt, or
+pass about this candidate. “I like it” or “not bad” is a preference, not
+complete adoption evidence: ask the choice once more. Before `adopt`, restate
+the candidate attempt ID being adopted. An agent cannot be the human reviewer,
+choose for the user, or turn silence into pass. Without explicit,
+exact-candidate human approval, **do not adopt**; retain pending or rejected
+status. Synthetic human fixtures are test data, never real approval.
+
+Before the next request for the same character, run `revisions --character`
+and turn rejected issues and notes into prompt changes; changing frozen markers
+or the style guide still needs the user's confirmation.
 
 Use `adopt` only with the exact candidate's human-review event and all required
 automatic-result events. Missing, failed, pending, unsupported, stale, or mismatched
